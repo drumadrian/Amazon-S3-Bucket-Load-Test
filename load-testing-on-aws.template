@@ -377,6 +377,7 @@ Resources:
               Service: "ecs-tasks.amazonaws.com"
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+        - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
 
   ContainerCodeBuildRole:
     Type: AWS::IAM::Role
@@ -602,8 +603,8 @@ Resources:
         ClusterName: !Sub ${AWS::StackName}
         Tags:
           -
-            Key: SolutionId
-            Value: SO0062
+            Key: Project
+            Value: S3 Put LoadTest
 
   EcsSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -660,7 +661,7 @@ Resources:
     # DeletionPolicy: Delete
     Type: AWS::S3::Bucket
     Properties:
-      LoggingConfiguration:
+      # LoggingConfiguration:
         # DestinationBucketName: !Ref LogsBucket
         # LogFilePrefix: scenarios-bucket-access/
       # BucketEncryption:
@@ -761,7 +762,9 @@ Resources:
                   - $(aws ecr get-login --region ${AWS::Region} --no-include-email)
               build:
                 commands:
+                  - cd container
                   - docker build -t $REPOSITORY:latest .
+                  - ls -al
                   - docker tag $REPOSITORY:latest $REPOSITORY_URI:latest
               post_build:
                 commands:

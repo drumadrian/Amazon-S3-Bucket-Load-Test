@@ -5,7 +5,9 @@ UUID=$(cat /proc/sys/kernel/random/uuid)
 echo "I like logs for dinner"
 
 echo "Starting upload test"
-aws s3 cp /beef/diagram.png s3://buildcontainer-containerbucket-1if2t84ycrr7j/diagram.png
+ls -al /usr/local/bin
+ls -al /usr/bin/
+aws s3 cp /beef/diagram.png s3://buildcontainer2-storagebucket-oxfvz7mnpv2p/diagram.png
 
 # echo "Running test"
 # bzt test.json -o modules.console.disable=true
