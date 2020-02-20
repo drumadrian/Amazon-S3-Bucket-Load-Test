@@ -39,15 +39,11 @@ These steps are guidance and can be executed out of order by an experienced oper
 ### Commands to Build container zip file: 
 ###### (to be uploaed to S3 for container build pipeline):
 
-aws cloudformation create-stack --stack-name buildcontainer2 --template-body=file://load-testing-on-aws.template --capabilities CAPABILITY_IAM
-
-aws cloudformation update-stack --stack-name buildcontainer2 --template-body=file://load-testing-on-aws.template --capabilities CAPABILITY_IAM
-
 rm container.zip
 
 zip -r container.zip ./container -x 'container.zip.orig*' -x 'load-testing-on-aws.template'
 
-aws s3 cp container.zip s3://buildcontainer2-containerbucket-1wkqre9fp4d33/container.zip
+aws s3 cp container.zip s3://amazon-s3-bucket-load-test-containerbucket-15d8doiyy402t/container.zip
 
 
 ### CLI Commands to Deploy Solution: 
