@@ -7,6 +7,7 @@ echo "I like logs for dinner"
 echo "Starting upload test"
 ls -al /usr/local/bin
 ls -al /usr/bin/
+python -V
 aws s3 cp /beef/diagram.png s3://amazon-s3-bucket-load-test-storagebucket-knlgpd3wpz0n/diagram.png
 
 # echo "Running test"

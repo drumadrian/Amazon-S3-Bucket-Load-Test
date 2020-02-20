@@ -460,7 +460,7 @@ Resources:
   ContainerCodeBuild:
     Type: AWS::CodeBuild::Project
     Properties:
-      Description: Builds distributed load testing suite
+      Description: Builds S3 load testing container
       TimeoutInMinutes: 20
       ServiceRole: !GetAtt ContainerCodeBuildRole.Arn
       EncryptionKey: !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/s3
