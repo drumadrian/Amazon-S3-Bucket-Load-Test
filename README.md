@@ -50,6 +50,11 @@ zip -r container.zip ./container -x 'container.zip.orig*' -x 'load-testing-on-aw
 aws s3 cp container.zip s3://buildcontainer2-containerbucket-1wkqre9fp4d33/container.zip
 
 
+### CLI Commands to Deploy Solution: 
+
+sam validate
+sam build 
+sam deploy --guided
 
 
 
