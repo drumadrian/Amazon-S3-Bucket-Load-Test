@@ -9,6 +9,7 @@ RUN ls -al /beef/load-test.sh
 RUN chmod 755 /beef/load-test.sh
 RUN yum install -y aws-cli datetime
 RUN yum install -y python3-pip python3 python3-setuptools
-RUN pip3 install --user requirements.txt || true
+COPY requirements.txt /
+RUN pip3 install --user -r requirements.txt
 # ENTRYPOINT ["sh", "-c","/beef/load-test.sh"]
-ENTRYPOINT ["python","/beef/load-test.py"]
+ENTRYPOINT ["python3","/beef/load-test.py"]
