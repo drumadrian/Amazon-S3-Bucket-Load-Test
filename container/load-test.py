@@ -41,8 +41,8 @@ while var < 100:
     # s3_file_name="diagram_" + now.strftime("%H:%M:%S:%f") + ".png"
     s3_file_name=now.strftime("%f_%H:%M:%S:%f") + "_diagram" + ".png"
     print(s3_file_name)
-    uploaded = upload_to_bucket('/home/ec2-user/environment/Amazon-S3-Bucket-Load-Test/container/diagram.png', 'amazon-s3-bucket-load-test-storagebucket-knlgpd3wpz0n', s3_file_name)
-    done = datetime.now()
-    # uploaded = upload_to_bucket('/beef/diagram.png', 'amazon-s3-bucket-load-test-storagebucket-knlgpd3wpz0n', s3_file_name)
+    # uploaded = upload_to_bucket('/home/ec2-user/environment/Amazon-S3-Bucket-Load-Test/container/diagram.png', 'amazon-s3-bucket-load-test-storagebucket-knlgpd3wpz0n', s3_file_name)
+    # done = datetime.now()
+    uploaded = upload_to_bucket('/beef/diagram.png', 'amazon-s3-bucket-load-test-storagebucket-knlgpd3wpz0n', s3_file_name)
     var = var + 1
     
