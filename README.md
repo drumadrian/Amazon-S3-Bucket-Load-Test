@@ -39,11 +39,15 @@ These steps are guidance and can be executed out of order by an experienced oper
 ### Commands to Build container zip file: 
 ###### (to be uploaed to S3 for container build pipeline):
 
-rm container.zip
+rm putcontainer.zip
+zip -r putcontainer.zip ./putcontainer 
+rm getcontainer.zip
+zip -r getcontainer.zip ./container -x
 
-zip -r container.zip ./container -x 'container.zip.orig*' -x 'load-testing-on-aws.template'
+aws s3 cp putcontainer.zip s3://amazon-s3-bucket-load-test-containerbucket-15d8doiyy402t/putcontainer.zip
 
-aws s3 cp container.zip s3://amazon-s3-bucket-load-test-containerbucket-15d8doiyy402t/container.zip
+aws s3 cp getcontainer.zip s3://amazon-s3-bucket-load-test-containerbucket-15d8doiyy402t/getcontainer.zip
+
 
 
 ### CLI Commands to Deploy Solution: 

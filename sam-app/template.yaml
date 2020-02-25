@@ -54,10 +54,6 @@ Parameters:
 
 
 
-
-
-
-
 Resources:
 
   HelloWorldFunction:
@@ -66,11 +62,11 @@ Resources:
       CodeUri: hello_world/
       Handler: app.lambda_handler
       Runtime: python3.7
-        CreateThumbnailEvent:
-          Type: S3
-          Properties:
-            Bucket: !Ref SrcBucket
-            Events: s3:ObjectCreated:*
+        # CreateThumbnailEvent:
+        #   Type: S3
+        #   Properties:
+        #     Bucket: !Ref SrcBucket
+        #     Events: s3:ObjectCreated:*
 
 
 # ========================================================================
@@ -429,7 +425,7 @@ Resources:
                 - Name: SourceOutput
               Configuration:
                 S3Bucket: !Ref ContainerBucket
-                S3ObjectKey: container.zip
+                S3ObjectKey: putcontainer.zip
         -
           Name: Build
           Actions:
@@ -551,7 +547,7 @@ Resources:
                 - Name: SourceOutput
               Configuration:
                 S3Bucket: !Ref ContainerBucket
-                S3ObjectKey: container.zip
+                S3ObjectKey: getcontainer.zip
         -
           Name: Build
           Actions:
