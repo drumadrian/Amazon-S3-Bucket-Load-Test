@@ -15,20 +15,6 @@ Globals:
 
 Parameters:
 
-  # AdminName:
-  #   Type: String
-  #   Description: Then admin user name to access the Distributed Load Testing Console
-  #   MinLength: 4 
-  #   MaxLength: 20 
-  #   AllowedPattern: '[a-zA-Z0-9-]+'
-  #   ConstraintDescription: "username must be a minimum of 4 characters and cannot include spaces"
-
-  # AdminEmail:
-  #   Type: String
-  #   Description: Admin user email address to access the Distributed Load Testing Console
-  #   MinLength: 5 
-  #   AllowedPattern: '^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$' 
-  #   ConstraintDescription: "Admin email must be a valid email address"
 
   VpcCidrBlock:
     Type: String
@@ -86,18 +72,10 @@ Resources:
             Bucket: !Ref SrcBucket
             Events: s3:ObjectCreated:*
 
-      # Events:
-      #   HelloWorld:
-      #     Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
-      #     Properties:
-      #       Path: /hello
-      #       Method: get
 
-
-
-
-
-
+# ========================================================================
+## Shared Resources
+# ========================================================================
   CloudWatchLogsPolicy:
     Type: AWS::IAM::Policy
     Properties:
@@ -119,7 +97,6 @@ Resources:
               - logs:PutLogEvents
             Resource:
               !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/*
-
 
   EcsTaskExecutionRole:
     Type: AWS::IAM::Role
@@ -163,7 +140,7 @@ Resources:
                   - ecr:BatchCheckLayerAvailability
                   - ecr:GetRepositoryPolicy
                 Resource:
-                  - !Sub ${EcrRepository.Arn}
+                  - !Sub ${PUTEcrRepository.Arn}
               -
                 Effect: Allow
                 Action:
@@ -181,13 +158,6 @@ Resources:
                 Resource:
                     - !Sub ${ContainerBucket.Arn}
                     - !Sub ${ContainerBucket.Arn}/*
-    Metadata:
-      cfn_nag:
-        rules_to_suppress:
-          - id: F3
-            reason: "ECR GetAuthorizationToken does not support resource level permissions"
-          - id: W11
-            reason: "/* required to get/put objects to Amazon S3"
 
   ContainerCodePipelineRole:
     Type: AWS::IAM::Role
@@ -223,18 +193,74 @@ Resources:
                   - codebuild:StartBuild
                   - codebuild:BatchGetBuilds
                 Resource:
-                  - !Sub ${ContainerCodeBuild.Arn}
-    Metadata:
-      cfn_nag:
-        rules_to_suppress:
-          - id: W11
-            reason: "/* required to get/put objects to Amazon S3"
+                  - !Sub ${PUTContainerCodeBuild.Arn}
+              -
+                Effect: Allow
+                Action:
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                Resource:
+                  - !Sub ${GETContainerCodeBuild.Arn}
+
+  EcsCluster:
+      Type: AWS::ECS::Cluster
+      Properties:
+        ClusterName: !Sub ${AWS::StackName}
+        Tags:
+          -
+            Key: Project
+            Value: S3 Put LoadTest
+
+  EcsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: LoadTest Tasks Security Group
+      VpcId: !Ref Vpc
+      SecurityGroupEgress:
+        - IpProtocol: '-1'
+          CidrIp: !Ref EgressCidr
+
+  EcsTaskSqsQueue: 
+    Type: AWS::SQS::Queue
+    Properties:
+      VisibilityTimeout: 120
+
+  StorageBucket:
+    # DeletionPolicy: Retain
+    Type: AWS::S3::Bucket
+    Properties:
+      # LoggingConfiguration:
+        # DestinationBucketName: !Ref LogsBucket
+        # LogFilePrefix: scenarios-bucket-access/
+      # BucketEncryption:
+      #   ServerSideEncryptionConfiguration:
+      #   - ServerSideEncryptionByDefault:
+      #       SSEAlgorithm: aws:kms
+      Tags:
+        -
+          Key: Project
+          Value: Amazon S3 Load Testing
+
+  ContainerBucket:
+    # DeletionPolicy: Retain
+    Type: AWS::S3::Bucket
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: aws:kms
+      Tags:
+        -
+          Key: created by
+          Value: study gurus
 
 
 
-
-
-## Fargate VPC
+# ========================================================================
+## VPC Resources
+# ========================================================================
   Vpc:
     Type: AWS::EC2::VPC
     Properties:
@@ -302,38 +328,17 @@ Resources:
       RouteTableId: !Ref MainRouteTable
       SubnetId: !Ref PublicSubnetB
 
-## ECS Resources
-  EcrRepository:
+
+
+# ========================================================================
+## Resources for PUT Container 
+# ========================================================================
+  PUTEcrRepository:
     # stack delte will fail as the repo is not empty.
     DeletionPolicy: Retain
     Type: AWS::ECR::Repository
 
-  EcsCluster:
-      Type: AWS::ECS::Cluster
-      Properties:
-        ClusterName: !Sub ${AWS::StackName}
-        Tags:
-          -
-            Key: Project
-            Value: S3 Put LoadTest
-
-  EcsSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: LoadTest Tasks Security Group
-      VpcId: !Ref Vpc
-      SecurityGroupEgress:
-        - IpProtocol: '-1'
-          CidrIp: !Ref EgressCidr
-    Metadata:
-      cfn_nag:
-        rules_to_suppress:
-          - id: W36
-            reason: "flagged as not having a Description, property is GroupDescription not Description"
-          - id: W40
-            reason: "IpProtocol set to -1 (any) as ports are not known prior to running tests"
-
-  EcsTaskDefinition:
+  PUTEcsTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Cpu: '512'
@@ -347,127 +352,21 @@ Resources:
         -
           Essential: true
           Name: !Sub ${AWS::StackName}-load-tester
-          Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EcrRepository}:latest
+          Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${PUTEcrRepository}:latest
           Memory: 2048
           LogConfiguration:
             LogDriver: awslogs
             Options:
-              awslogs-group: !Ref EcsCloudWatchLogGroup
+              awslogs-group: !Ref PUTEcsCloudWatchLogGroup
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: "load-testing"
 
-  EcsCloudWatchLogGroup:
+  PUTEcsCloudWatchLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       RetentionInDays: 365
 
-
-  EcsTaskSqsQueue: 
-    Type: AWS::SQS::Queue
-    Properties:
-      VisibilityTimeout: 120
-
-## Storage
-  StorageBucket:
-    # DeletionPolicy: Delete
-    Type: AWS::S3::Bucket
-    Properties:
-      # LoggingConfiguration:
-        # DestinationBucketName: !Ref LogsBucket
-        # LogFilePrefix: scenarios-bucket-access/
-      # BucketEncryption:
-      #   ServerSideEncryptionConfiguration:
-      #   - ServerSideEncryptionByDefault:
-      #       SSEAlgorithm: aws:kms
-      Tags:
-        -
-          Key: Project
-          Value: Amazon S3 Load Testing
-
-  ContainerBucket:
-    DeletionPolicy: Retain
-    Type: AWS::S3::Bucket
-    Properties:
-      VersioningConfiguration:
-        Status: Enabled
-      BucketEncryption:
-        ServerSideEncryptionConfiguration:
-        - ServerSideEncryptionByDefault:
-            SSEAlgorithm: aws:kms
-      Tags:
-        -
-          Key: created by
-          Value: study gurus
-
-
-
-  # DynamoDbPolicy:
-  #   Type: AWS::IAM::Policy
-  #   Properties:
-  #     PolicyName: !Sub ${AWS::StackName}-dynamodb-policy
-  #     Roles:
-  #       - !Ref LambdaApiRole
-  #       - !Ref LambdaResultsRole
-  #       - !Ref LambdaTaskRole
-  #     PolicyDocument:
-  #       Version: 2012-10-17
-  #       Statement:
-  #         -
-  #           Effect: Allow
-  #           Action:
-  #             - dynamodb:DeleteItem
-  #             - dynamodb:GetItem
-  #             - dynamodb:PutItem
-  #             - dynamodb:Query
-  #             - dynamodb:Scan
-  #             - dynamodb:UpdateItem
-  #           Resource:
-  #             - !Sub ${ScenariosTable.Arn}
-  #             - !Sub ${ResultsTable.Arn}
-
-  # ScenariosTable:
-  #   Type: AWS::DynamoDB::Table
-  #   Properties:
-  #     AttributeDefinitions:
-  #     - AttributeName: testId
-  #       AttributeType: S
-  #     KeySchema:
-  #     - AttributeName: testId
-  #       KeyType: HASH
-  #     BillingMode: "PAY_PER_REQUEST"
-
-  # ResultsTable:
-  #   Type: AWS::DynamoDB::Table
-  #   Properties:
-  #     AttributeDefinitions:
-  #     - AttributeName: uuid
-  #       AttributeType: S
-  #     - AttributeName: testId
-  #       AttributeType: S
-  #     KeySchema:
-  #     - AttributeName: uuid
-  #       KeyType: HASH
-  #     GlobalSecondaryIndexes:
-  #       -
-  #         IndexName: "uuid-testId-index"
-  #         KeySchema:
-  #         - AttributeName: uuid
-  #           KeyType: HASH
-  #         - AttributeName: testId
-  #           KeyType: RANGE
-  #         Projection:
-  #           ProjectionType: "ALL"
-  #     TimeToLiveSpecification:
-  #       AttributeName: ttlDel
-  #       Enabled: true
-  #     BillingMode: "PAY_PER_REQUEST"
-  #     Tags:
-  #       -
-  #         Key: SolutionId
-  #         Value: SO0062
-
-## Container Pipeline
-  ContainerCodeBuild:
+  PUTContainerCodeBuild:
     Type: AWS::CodeBuild::Project
     Properties:
       Description: Builds S3 load testing container
@@ -483,10 +382,10 @@ Resources:
         EnvironmentVariables:
           -
             Name: REPOSITORY
-            Value: !Sub ${EcrRepository}
+            Value: !Sub ${PUTEcrRepository}
           -
             Name: REPOSITORY_URI
-            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EcrRepository}
+            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${PUTEcrRepository}
       Source:
         Type: CODEPIPELINE
         BuildSpec: !Sub |
@@ -507,7 +406,7 @@ Resources:
                 commands:
                   - docker push $REPOSITORY_URI:latest
 
-  ContainerCodePipeline:
+  PUTContainerCodePipeline:
     #wait for the container
     Type: AWS::CodePipeline::Pipeline
     Properties:
@@ -547,18 +446,222 @@ Resources:
                 - Name: BuildOutput
               Configuration:
                 ProjectName:
-                  !Ref ContainerCodeBuild
-
-
-# INSERT LAMBDA TO CLEAN UP S3 BUCKETS
-
-# build separate containers for Put and Get services
+                  !Ref PUTContainerCodeBuild
 
 
 
 
 
+# ========================================================================
+## Resources for GET Container 
+# ========================================================================
+  GETEcrRepository:
+    # stack delte will fail as the repo is not empty.
+    DeletionPolicy: Retain
+    Type: AWS::ECR::Repository
 
+  GETEcsTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Cpu: '512'
+      ExecutionRoleArn: !GetAtt EcsTaskExecutionRole.Arn
+      Memory: '2048'
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      TaskRoleArn: !GetAtt EcsTaskExecutionRole.Arn
+      ContainerDefinitions:
+        -
+          Essential: true
+          Name: !Sub ${AWS::StackName}-load-tester
+          Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${GETEcrRepository}:latest
+          Memory: 2048
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref GETEcsCloudWatchLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: "load-testing"
+
+  GETEcsCloudWatchLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 365
+
+  GETContainerCodeBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Description: Builds S3 load testing container
+      TimeoutInMinutes: 20
+      ServiceRole: !GetAtt ContainerCodeBuildRole.Arn
+      EncryptionKey: !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/s3
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_MEDIUM
+        Image: aws/codebuild/docker:18.09.0
+        EnvironmentVariables:
+          -
+            Name: REPOSITORY
+            Value: !Sub ${GETEcrRepository}
+          -
+            Name: REPOSITORY_URI
+            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${GETEcrRepository}
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: !Sub |
+          version: 0.2
+          phases:
+              pre_build:
+                commands:
+                  - echo $REPOSITORY
+                  - echo $REPOSITORY_URI
+                  - $(aws ecr get-login --region ${AWS::Region} --no-include-email)
+              build:
+                commands:
+                  - cd container
+                  - docker build -t $REPOSITORY:latest .
+                  - ls -al
+                  - docker tag $REPOSITORY:latest $REPOSITORY_URI:latest
+              post_build:
+                commands:
+                  - docker push $REPOSITORY_URI:latest
+
+  GETContainerCodePipeline:
+    #wait for the container
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn: !GetAtt ContainerCodePipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ContainerBucket
+      Stages:
+        -
+          Name: Source
+          Actions:
+            -
+              Name: Source
+              ActionTypeId:
+                Category: Source
+                Provider: S3
+                Owner: AWS
+                Version: '1'
+              OutputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                S3Bucket: !Ref ContainerBucket
+                S3ObjectKey: container.zip
+        -
+          Name: Build
+          Actions:
+            -
+              Name: Build
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: '1'
+                Provider: CodeBuild
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: BuildOutput
+              Configuration:
+                ProjectName:
+                  !Ref GETContainerCodeBuild
+
+
+
+
+# ========================================================================
+## Resources for LAMBDA TO CLEAN UP S3 BUCKETS 
+# ========================================================================
+  cleanupBucketOnDelete:
+      DependsOn: cleanupBucketOnDeleteFunction
+      Type: Custom::cleanupbucket
+      Properties:
+          ServiceToken: 
+              Fn::GetAtt: 
+                - "cleanupBucketOnDeleteFunction"
+                - "Arn"
+          BucketName: !Sub '${StorageBucket.Arn}'
+        # BucketName: !Ref ArtifactStoreBucketName
+
+  
+  cleanupBucketOnDeleteFunction:
+      DependsOn: StorageBucket
+      Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+      # Type: "AWS::Lambda::Function"
+      Properties:
+          Role: !GetAtt cleanupBucketOnDeleteLambdaRole.Arn
+          CodeUri: cleanupBucketOnDelete/
+          Handler: cleanupBucketOnDelete.lambda_handler
+          Runtime: python3.7
+          Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
+              Variables:
+                  s3_bucket_name: !Ref StorageBucket
+          Timeout: 60
+          Description: cleanup Bucket on Delete Lambda Lambda function.
+
+
+  cleanupBucketOnDelete2:
+      DependsOn: cleanupBucketOnDeleteFunction2
+      Type: Custom::cleanupbucket
+      Properties:
+          ServiceToken: 
+              Fn::GetAtt: 
+                - "cleanupBucketOnDeleteFunction2"
+                - "Arn"
+          BucketName: !Sub '${ContainerBucket.Arn}'
+        # BucketName: !Ref ArtifactStoreBucketName
+
+  
+  cleanupBucketOnDeleteFunction2:
+      DependsOn: ContainerBucket
+      Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+      # Type: "AWS::Lambda::Function"
+      Properties:
+          Role: !GetAtt cleanupBucketOnDeleteLambdaRole.Arn
+          CodeUri: cleanupBucketOnDelete/
+          Handler: cleanupBucketOnDelete.lambda_handler
+          Runtime: python3.7
+          Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
+              Variables:
+                  s3_bucket_name: !Ref ContainerBucket
+          Timeout: 60
+          Description: cleanup Bucket on Delete Lambda Lambda function.
+
+
+  cleanupBucketOnDeleteLambdaRole:
+      Type: AWS::IAM::Role
+      Properties:
+          AssumeRolePolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                  - Action: ['sts:AssumeRole']
+                    Effect: Allow
+                    Principal:
+                      Service: [lambda.amazonaws.com]
+
+
+  cleanupBucketOnDeleteLambdaRolePolicy: 
+      Type: "AWS::IAM::Policy"
+      Properties: 
+          PolicyName: !Sub "${AWS::StackName}-cleanupBucketOnDeleteLambdaRolePolicy"
+          PolicyDocument: 
+              Version: "2012-10-17"
+              Statement: 
+                  - Effect: "Allow"
+                    Action: 
+                          - "s3:*"
+                          - "logs:*"
+                    Resource: "*"
+                  - Effect: "Deny"
+                    Action: 
+                          - "s3:DeleteBucket"
+                    Resource: "*"
+          Roles: 
+              - Ref: "cleanupBucketOnDeleteLambdaRole"
 
 
 
@@ -567,12 +670,6 @@ Resources:
 
 
 Outputs:
-  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
-  # Find out more about other implicit resources you can reference within SAM
-  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  # HelloWorldApi:
-  #   Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-  #   Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
   HelloWorldFunction:
     Description: "Hello World Lambda Function ARN"
     Value: !GetAtt HelloWorldFunction.Arn
