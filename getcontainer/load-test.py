@@ -3,6 +3,26 @@ from botocore.exceptions import NoCredentialsError
 from datetime import datetime
 
 
+
+
+def get_bucket_name():
+    print("Getting bucket name")
+
+    # TODO
+    # https://stackoverflow.com/questions/2805231/how-can-i-do-dns-lookups-in-python-including-referring-to-etc-hosts
+    s3_bucket_name = "a"
+
+    print("bucket name=" + s3_bucket_name)
+    return s3_bucket_name
+
+
+
+
+
+
+
+
+
 def upload_to_bucket(local_file, bucket, s3_file):
     s3 = boto3.client('s3')
 

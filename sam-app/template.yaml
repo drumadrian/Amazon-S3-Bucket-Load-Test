@@ -394,7 +394,7 @@ Resources:
                   - $(aws ecr get-login --region ${AWS::Region} --no-include-email)
               build:
                 commands:
-                  - cd container
+                  - cd putcontainer
                   - docker build -t $REPOSITORY:latest .
                   - ls -al
                   - docker tag $REPOSITORY:latest $REPOSITORY_URI:latest
@@ -516,7 +516,7 @@ Resources:
                   - $(aws ecr get-login --region ${AWS::Region} --no-include-email)
               build:
                 commands:
-                  - cd container
+                  - cd getcontainer
                   - docker build -t $REPOSITORY:latest .
                   - ls -al
                   - docker tag $REPOSITORY:latest $REPOSITORY_URI:latest
