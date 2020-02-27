@@ -50,6 +50,18 @@ Parameters:
     AllowedPattern: "(?:^$|(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2}))"
     ConstraintDescription: "must be a valid IP CIDR range of the form x.x.x.x/x."
 
+  HostedZone:
+    Type: String
+    Default: "loadtest"
+    Description: The DNS name of the Amazon Route 53 hosted zone
+    AllowedPattern: '(?!-)[a-zA-Z0-9-.]{1,63}(?<!-)'
+    ConstraintDescription: must be a valid DNS zone name.
+
+  InitialResourceRecord:
+    Type: String
+    Default: "0.0.0.0"
+    Description: The DNS value of the Amazon Route 53 record at initialization
+    ConstraintDescription: must be a valid IP address.
 
 
 
@@ -142,6 +154,8 @@ Resources:
                 Effect: Allow
                 Action:
                   - ecr:GetAuthorizationToken
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
                 Resource: "*"
               -
                 Effect: Allow
@@ -325,6 +339,73 @@ Resources:
       RouteTableId: !Ref MainRouteTable
       SubnetId: !Ref PublicSubnetB
 
+
+# ================================
+#   DNS Assets  
+# ================================
+  LoadTestDNSzone: 
+    Type: "AWS::Route53::HostedZone"
+    Properties: 
+      HostedZoneConfig: 
+        Comment: 'My private hosted zone for loadtest system'
+      Name: !Ref HostedZone
+      VPCs: 
+        - 
+          VPCId: !Ref Vpc
+          VPCRegion: !Sub ${AWS::Region}
+      HostedZoneTags: 
+        - 
+          Key: 'created by'
+          Value: 'LoadTest project'
+
+  # BucketNameDNSRecord:
+  #   Type: AWS::Route53::RecordSet
+  #   Properties:
+  #     HostedZoneName: !Join 
+  #       - ''
+  #       - - !Ref HostedZone
+  #         - .
+  #     Comment: Name for S3 bucket under test.
+  #     Name: !Join 
+  #       - ''
+  #       - - 'bucket'
+  #         - .
+  #         - !Ref HostedZone
+  #         - .
+  #     Type: A
+  #     TTL: '900'
+      # ResourceRecords: !Sub "\"${ElasticsearchClusterName}\""
+  #     ResourceRecords: !Join 
+  #       - ''
+  #       - - 'bucket'
+  #         - .
+  #         - !Ref HostedZone
+  #         - .
+  #       # - !Ref InitialResourceRecord
+
+  # SQSqueueDNSRecord:
+  #   Type: AWS::Route53::RecordSet
+  #   Properties:
+  #     HostedZoneName: !Join 
+  #       - ''
+  #       - - !Ref HostedZone
+  #         - .
+  #     Comment: SQS Queue name.
+  #     Name: !Join 
+  #       - ''
+  #       - - 'filesqueue'
+  #         - .
+  #         - !Ref HostedZone
+  #         - .
+  #     Type: TXT
+  #     TTL: '900'
+  #     ResourceRecords: !Join 
+  #       - ''
+  #       - - 'filesqueue'
+  #         - .
+  #         - !Ref HostedZone
+  #         - .
+  #       # - !Sub "\"${ElasticsearchClusterName}\""
 
 
 # ========================================================================

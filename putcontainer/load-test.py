@@ -6,30 +6,12 @@ import os
 import pprint 
 
 
-
-
-# Get the list of user's 
-# environment variables 
-env_var = os.environ 
-  
-# Print the list of user's 
-# environment variables 
-print("User's Environment variable:") 
-pprint.pprint(dict(env_var), width = 1) 
-
-
-
-
-
-
-
-
 def get_bucketname(bucket_name, object_name):
     response = dns.resolver.query("bucket.loadtest","TXT").response.answer[0][-1].strings[0]
     print(response)
     return response
 
-def get_queuename(bucket_name, object_name):
+def get_queuename():
     response = dns.resolver.query("filesqueue.loadtest","TXT").response.answer[0][-1].strings[0]
     print(response)
     return response
@@ -52,7 +34,7 @@ def upload_to_bucket(local_file, bucket, s3_file):
 
 
 
-def enqueue_object(bucketname, s3_file_name, queuename, sqs_client):
+def enqueue_object(bucketname, s3_file_name, queueURL, sqs_client):
     payload = { 
     "bucketname": bucketname, 
     "s3_file_name": s3_file_name
@@ -61,7 +43,7 @@ def enqueue_object(bucketname, s3_file_name, queuename, sqs_client):
     queue_url = 'SQS_QUEUE_URL'
 
     response = sqs.send_message(
-        QueueUrl=queue_url,
+        QueueUrl=queueURL,
         DelaySeconds=10,
         MessageAttributes={
             'Title': {
@@ -77,48 +59,21 @@ def enqueue_object(bucketname, s3_file_name, queuename, sqs_client):
                 'StringValue': '6'
             }
         },
-        MessageBody=(
-            'Information about current NY Times fiction bestseller for '
-            'week of 12/11/2016.'
-        )
+        MessageBody=payload
+        # MessageBody=(
+        #     'Information about current NY Times fiction bestseller for '
+        #     'week of 12/11/2016.'
+        # )
     )
 
-print(response['MessageId'])
-
-
-    response = sqs_client.send_message(
-        QueueUrl = 'string',
-        MessageBody = payload,
-        DelaySeconds = 1,
-        MessageAttributes = {
-            'string': {
-                'StringValue': 'string',
-                'StringValue': 'string',
-                'DataType': 'string'
-            }
-        },
-        MessageSystemAttributes = {
-            'string': {
-                'StringValue': 'string',
-                'BinaryValue': b'bytes',
-                'StringListValues': [
-                    'string',
-                ],
-                'BinaryListValues': [
-                    b'bytes',
-                ],
-                'DataType': 'string'
-            }
-        },
-        MessageDeduplicationId = 'string',
-        MessageGroupId = 'string'
-    )
+    print(response['MessageId'])
 
 
 
 
 
-def start_uploads(bucketname, queuename, sqs_client):
+
+def start_uploads(bucketname, queueURL, sqs_client):
     var=0
     # while var < 100:
     for var in range(100):
@@ -132,15 +87,26 @@ def start_uploads(bucketname, queuename, sqs_client):
         # done = datetime.now()
         uploaded = upload_to_bucket('/app/diagram.png', bucketname, s3_file_name)
         if uploaded:
-            enqueue_object(bucketname, s3_file_name, queuename, sqs_client)
+            enqueue_object(bucketname, s3_file_name, queueURL, sqs_client)
 
-        
+     
+
 
 if __name__ == '__main__':
+    # Get the list of user's 
+    # environment variables 
+    env_var = os.environ 
+    # Print the list of user's 
+    # environment variables 
+    print("User's Environment variable:") 
+    pprint.pprint(dict(env_var), width = 1) 
+
+    QUEUEURL = get_queuename()
+    BUCKETNAME = get_bucketname()
+    
+
     sqs_client = boto3.client('sqs')
-    bucketname = get_bucketname()
-    queuename = get_queuename()
-    start_uploads(bucketname, queuename, sqs_client)
+    start_uploads(BUCKETNAME, QUEUEURL, sqs_client)
 
 
 
