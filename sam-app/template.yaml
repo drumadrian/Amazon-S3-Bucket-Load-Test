@@ -107,6 +107,7 @@ Resources:
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
         - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+        - "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
 
   ContainerCodeBuildRole:
     Type: AWS::IAM::Role
@@ -382,6 +383,9 @@ Resources:
           -
             Name: REPOSITORY_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${PUTEcrRepository}
+          -
+            Name: SQS_QUEUE_URL
+            Value: !Ref EcsTaskSqsQueue
       Source:
         Type: CODEPIPELINE
         BuildSpec: !Sub |
@@ -504,6 +508,9 @@ Resources:
           -
             Name: REPOSITORY_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${GETEcrRepository}
+          -
+            Name: SQS_QUEUE_URL
+            Value: !Ref EcsTaskSqsQueue
       Source:
         Type: CODEPIPELINE
         BuildSpec: !Sub |
