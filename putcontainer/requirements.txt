@@ -1,5 +1,5 @@
-awscli==1.16.290
-botocore==1.13.26
+boto3==1.12.10
+botocore==1.15.10
 colorama==0.4.1
 dnspython==1.16.0
 docutils==0.15.2
@@ -8,6 +8,6 @@ pyasn1==0.4.7
 python-dateutil==2.8.0
 PyYAML==5.1.2
 rsa==3.4.2
-s3transfer==0.2.1
+s3transfer==0.3.3
 six==1.13.0
 urllib3==1.25.7

@@ -149,6 +149,7 @@ Resources:
                   - ecr:BatchCheckLayerAvailability
                   - ecr:GetRepositoryPolicy
                 Resource:
+                  - !Sub ${GETEcrRepository.Arn}
                   - !Sub ${PUTEcrRepository.Arn}
               -
                 Effect: Allow
@@ -355,57 +356,46 @@ Resources:
           VPCRegion: !Sub ${AWS::Region}
       HostedZoneTags: 
         - 
-          Key: 'created by'
+          Key: 'created for'
           Value: 'LoadTest project'
 
-  # BucketNameDNSRecord:
-  #   Type: AWS::Route53::RecordSet
-  #   Properties:
-  #     HostedZoneName: !Join 
-  #       - ''
-  #       - - !Ref HostedZone
-  #         - .
-  #     Comment: Name for S3 bucket under test.
-  #     Name: !Join 
-  #       - ''
-  #       - - 'bucket'
-  #         - .
-  #         - !Ref HostedZone
-  #         - .
-  #     Type: A
-  #     TTL: '900'
-      # ResourceRecords: !Sub "\"${ElasticsearchClusterName}\""
-  #     ResourceRecords: !Join 
-  #       - ''
-  #       - - 'bucket'
-  #         - .
-  #         - !Ref HostedZone
-  #         - .
-  #       # - !Ref InitialResourceRecord
+  BucketNameDNSRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: !Join 
+        - ''
+        - - !Ref HostedZone
+          - .
+      Comment: Name for S3 bucket under test.
+      Name: !Join 
+        - ''
+        - - 'bucket'
+          - .
+          - !Ref HostedZone
+          - .
+      Type: TXT
+      TTL: '60'
+      ResourceRecords: 
+        - !Sub "\"${StorageBucket}\""
 
-  # SQSqueueDNSRecord:
-  #   Type: AWS::Route53::RecordSet
-  #   Properties:
-  #     HostedZoneName: !Join 
-  #       - ''
-  #       - - !Ref HostedZone
-  #         - .
-  #     Comment: SQS Queue name.
-  #     Name: !Join 
-  #       - ''
-  #       - - 'filesqueue'
-  #         - .
-  #         - !Ref HostedZone
-  #         - .
-  #     Type: TXT
-  #     TTL: '900'
-  #     ResourceRecords: !Join 
-  #       - ''
-  #       - - 'filesqueue'
-  #         - .
-  #         - !Ref HostedZone
-  #         - .
-  #       # - !Sub "\"${ElasticsearchClusterName}\""
+  SQSqueueDNSRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: !Join 
+        - ''
+        - - !Ref HostedZone
+          - .
+      Comment: SQS Queue name.
+      Name: !Join 
+        - ''
+        - - 'filesqueue'
+          - .
+          - !Ref HostedZone
+          - .
+      Type: TXT
+      TTL: '60'
+      ResourceRecords: 
+        - !Sub "\"${EcsTaskSqsQueue}\""
 
 
 # ========================================================================

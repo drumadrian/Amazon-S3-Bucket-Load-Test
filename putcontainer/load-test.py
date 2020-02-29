@@ -8,11 +8,12 @@ import pprint
 
 def get_bucketname(bucket_name, object_name):
     response = dns.resolver.query("bucket.loadtest","TXT").response.answer[0][-1].strings[0]
-    print(response)
+    print("bucket.loadtest={0}".format(response))
     return response
 
 def get_queuename():
     response = dns.resolver.query("filesqueue.loadtest","TXT").response.answer[0][-1].strings[0]
+    print("filesqueue.loadtest={0}".format(response))
     print(response)
     return response
 
@@ -42,21 +43,17 @@ def enqueue_object(bucketname, s3_file_name, queueURL, sqs_client):
     
     queue_url = 'SQS_QUEUE_URL'
 
-    response = sqs.send_message(
+    response = sqs_client.send_message(
         QueueUrl=queueURL,
-        DelaySeconds=10,
+        DelaySeconds=1,
         MessageAttributes={
-            'Title': {
+            'bucketname': {
                 'DataType': 'String',
-                'StringValue': 'The Whistler'
+                'StringValue': bucketname
             },
-            'Author': {
+            's3_file_name': {
                 'DataType': 'String',
-                'StringValue': 'John Grisham'
-            },
-            'WeeksOn': {
-                'DataType': 'Number',
-                'StringValue': '6'
+                'StringValue': s3_file_name
             }
         },
         MessageBody=payload
@@ -88,8 +85,10 @@ def start_uploads(bucketname, queueURL, sqs_client):
         uploaded = upload_to_bucket('/app/diagram.png', bucketname, s3_file_name)
         if uploaded:
             enqueue_object(bucketname, s3_file_name, queueURL, sqs_client)
+        else:
+            print("Error uploading object: {0} to bucket: {1}".format(s3_file_name, bucketname))
 
-     
+
 
 
 if __name__ == '__main__':
