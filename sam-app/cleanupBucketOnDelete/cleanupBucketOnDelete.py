@@ -55,7 +55,7 @@ def empty_delete_buckets(bucket_name):
             for content in page['Contents']:
                 key = content['Key']
                 s3_client.delete_object(Bucket=bucket_name, Key=content['Key'])
-    #UNCOMMENT THE LINE BELOW TO MAKE LAMBDA DELETE THE BUCKET.  
+    #UNCOMMENT THE LINE BELOW TO MAKE LAMBDA DELETE THE BUCKET.....AND UPDATE IAM POLICY
     # THIS WILL CAUSE AN FAILURE SINCE CLOUDFORMATION ALSO TRIES TO DELETE THE BUCKET
     #s3_client.delete_bucket(Bucket=bucket_name)
     #print "Successfully deleted the bucket {0}".format(bucket_name)
