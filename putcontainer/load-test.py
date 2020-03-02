@@ -6,17 +6,16 @@ import os
 import pprint 
 
 
-def get_bucketname(bucket_name, object_name):
-    response = dns.resolver.query("bucket.loadtest","TXT").response.answer[0][-1].strings[0]
-    print("bucket.loadtest={0}".format(response))
-    return response
-
 def get_queuename():
     response = dns.resolver.query("filesqueue.loadtest","TXT").response.answer[0][-1].strings[0]
     print("filesqueue.loadtest={0}".format(response))
     print(response)
     return response
 
+def get_bucketname(bucket_name, object_name):
+    response = dns.resolver.query("bucket.loadtest","TXT").response.answer[0][-1].strings[0]
+    print("bucket.loadtest={0}".format(response))
+    return response
 
 def upload_to_bucket(local_file, bucket, s3_file):
     s3 = boto3.client('s3')
@@ -97,7 +96,7 @@ if __name__ == '__main__':
     env_var = os.environ 
     # Print the list of user's 
     # environment variables 
-    print("User's Environment variable:") 
+    print("User's Environment variables:") 
     pprint.pprint(dict(env_var), width = 1) 
 
     QUEUEURL = get_queuename()
