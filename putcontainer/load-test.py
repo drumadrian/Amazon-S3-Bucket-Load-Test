@@ -4,16 +4,18 @@ from datetime import datetime
 import dns.resolver
 import os 
 import pprint 
-
+import curses
 
 def get_queuename():
-    response = dns.resolver.query("filesqueue.loadtest","TXT").response.answer[0][-1].strings[0]
+    bytes_response = dns.resolver.query("filesqueue.loadtest","TXT").response.answer[0][-1].strings[0]
+    response = bytes_response.decode("utf-8")
     print("filesqueue.loadtest={0}".format(response))
     print(response)
     return response
 
-def get_bucketname(bucket_name, object_name):
-    response = dns.resolver.query("bucket.loadtest","TXT").response.answer[0][-1].strings[0]
+def get_bucketname():
+    bytes_response = dns.resolver.query("bucket.loadtest","TXT").response.answer[0][-1].strings[0]
+    response = bytes_response.decode("utf-8")
     print("bucket.loadtest={0}".format(response))
     return response
 
@@ -39,33 +41,19 @@ def enqueue_object(bucketname, s3_file_name, queueURL, sqs_client):
     "bucketname": bucketname, 
     "s3_file_name": s3_file_name
     }
+    str_payload = json.dumps(payload)
     
-    queue_url = 'SQS_QUEUE_URL'
-
     response = sqs_client.send_message(
         QueueUrl=queueURL,
         DelaySeconds=1,
-        MessageAttributes={
-            'bucketname': {
-                'DataType': 'String',
-                'StringValue': bucketname
-            },
-            's3_file_name': {
-                'DataType': 'String',
-                'StringValue': s3_file_name
-            }
-        },
-        MessageBody=payload
+        # MessageAttributes=,
+        MessageBody=str_payload        
         # MessageBody=(
         #     'Information about current NY Times fiction bestseller for '
         #     'week of 12/11/2016.'
         # )
     )
-
     print(response['MessageId'])
-
-
-
 
 
 

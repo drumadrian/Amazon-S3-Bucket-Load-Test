@@ -13,15 +13,9 @@ def get_queueURL():
     print(response)
     return response
 
-# def get_bucketname(bucket_name, object_name):
-#     response = dns.resolver.query("bucket.loadtest","TXT").response.answer[0][-1].strings[0]
-#     print("bucket.loadtest={0}".format(response))
-#     return response
-
-
 
 def dequeue_message(QUEUEURL, sqs_client):
-    ###### Example of data that was sent:#########
+    ###### Example of string data that was sent:#########
     # payload = { 
     # "bucketname": bucketname, 
     # "s3_file_name": s3_file_name
@@ -42,10 +36,17 @@ def dequeue_message(QUEUEURL, sqs_client):
         # ReceiveRequestAttemptId='string'
     )
 
-    print(receive_message_response['Messages'][0]['Body'])
     message_body=json.loads(receive_message_response['Messages'][0]['Body'])
+    print("message_body = {0}".format(message_body))
     bucketname = message_body['bucketname']
     objectkey = message_body['s3_file_name']
+
+    ReceiptHandle = receive_message_response['Messages'][0]['ReceiptHandle']
+    delete_message_response = sqs_client.delete_message(
+    QueueUrl=QUEUEURL,
+    ReceiptHandle='string'
+    )
+    print("delete_message_response = {0}".format(delete_message_response))
 
     return [bucketname, objectkey]
 
