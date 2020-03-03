@@ -68,19 +68,6 @@ Parameters:
 
 Resources:
 
-  HelloWorldFunction:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
-    Properties:
-      CodeUri: hello_world/
-      Handler: app.lambda_handler
-      Runtime: python3.7
-        # CreateThumbnailEvent:
-        #   Type: S3
-        #   Properties:
-        #     Bucket: !Ref SrcBucket
-        #     Events: s3:ObjectCreated:*
-
-
 # ========================================================================
 ## Shared Resources
 # ========================================================================
@@ -677,10 +664,11 @@ Resources:
           Timeout: 60
           Description: cleanup Bucket on Delete Lambda Lambda function.
 
+# -------------------------------------------------------
 
   cleanupBucketOnDelete2:
       DependsOn: cleanupBucketOnDeleteFunction2
-      Type: Custom::cleanupbucket
+      Type: Custom::cleanupbucket2
       Properties:
           ServiceToken: 
               Fn::GetAtt: 
@@ -738,15 +726,100 @@ Resources:
               - Ref: "cleanupBucketOnDeleteLambdaRole"
 
 
+# -------------------------------------------------------
+
+  cleanupPutEcrOnDelete:
+      DependsOn: cleanupPutEcrOnDeleteFunction
+      Type: Custom::cleanupputrepository
+      Properties:
+          ServiceToken: 
+              Fn::GetAtt: 
+                - "cleanupPutEcrOnDeleteFunction"
+                - "Arn"
+          ECRRepositoryARN: !Sub '${EcrRepository.Arn}'
+
+  cleanupPutEcrOnDeleteFunction:
+      DependsOn: EcrRepository
+      Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+      Properties:
+          Role: !GetAtt cleanupOnDeleteLambdaRole.Arn
+          CodeUri: cleanupEcrOnDelete/
+          Handler: cleanupEcrOnDelete.lambda_handler
+          Runtime: python3.7
+          Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
+              Variables:
+                  repository_name: !Ref PUTEcrRepository
+                  registryId: !Ref AWS::AccountId
+          Timeout: 30
+          Description: Delete PUT ECR repo Lambda function.
+
+# -------------------------------------------------------
+
+  cleanupGetEcrOnDelete:
+      DependsOn: cleanupGetEcrOnDeleteFunction
+      Type: Custom::cleanupgetrepository
+      Properties:
+          ServiceToken: 
+              Fn::GetAtt: 
+                - "cleanupGetEcrOnDeleteFunction"
+                - "Arn"
+          ECRRepositoryARN: !Sub '${EcrRepository.Arn}'
+
+  cleanupGetEcrOnDeleteFunction:
+      DependsOn: EcrRepository
+      Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+      Properties:
+          Role: !GetAtt cleanupOnDeleteLambdaRole.Arn
+          CodeUri: cleanupEcrOnDelete/
+          Handler: cleanupEcrOnDelete.lambda_handler
+          Runtime: python3.7
+          Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
+              Variables:
+                  repository_name: !Ref GETEcrRepository
+                  registryId: !Ref AWS::AccountId
+          Timeout: 30
+          Description: Delete GET ECR repo Lambda function.
+
+
+# -------------------------------------------------------
+
+  cleanupOnDeleteLambdaRole:
+      Type: AWS::IAM::Role
+      Properties:
+          AssumeRolePolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                  - Action: ['sts:AssumeRole']
+                    Effect: Allow
+                    Principal:
+                      Service: [lambda.amazonaws.com]
+
+  cleanupOnDeleteLambdaRolePolicy: 
+      Type: "AWS::IAM::Policy"
+      Properties: 
+          PolicyName: !Sub "${AWS::StackName}-cleanupOnDeleteLambdaRolePolicy"
+          PolicyDocument: 
+              Version: "2012-10-17"
+              Statement: 
+                  - Effect: "Allow"
+                    Action: 
+                          - "logs:*"
+                          - "ecr:*"
+                    Resource: "*"
+                  - Effect: "Deny"
+                    Action: 
+                          - "s3:DeleteBucket"
+                          - "ecr:delete-repository"
+                    Resource: "*"
+          Roles: 
+              - Ref: "cleanupOnDeleteLambdaRole"
 
 
 
 
 
 Outputs:
-  HelloWorldFunction:
-    Description: "Hello World Lambda Function ARN"
-    Value: !GetAtt HelloWorldFunction.Arn
-  HelloWorldFunctionIamRole:
-    Description: "Implicit IAM Role created for Hello World function"
-    Value: !GetAtt HelloWorldFunctionRole.Arn
+  StorageBucketARN:
+    Description: "StorageBucket ARN"
+    Value: !GetAtt StorageBucket.Arn
+
