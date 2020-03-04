@@ -59,8 +59,8 @@ rm putcontainer.zip
 zip -r putcontainer.zip ./putcontainer 
 rm getcontainer.zip
 zip -r getcontainer.zip ./getcontainer 
-aws s3 cp putcontainer.zip s3://amazon-s3-bucket-load-test-containerbucket-15d8doiyy402t/putcontainer.zip
-aws s3 cp getcontainer.zip s3://amazon-s3-bucket-load-test-containerbucket-15d8doiyy402t/getcontainer.zip
+aws s3 cp putcontainer.zip s3://amazon-s3-bucket-load-test-containerbucket-1v7ma7142raj7/putcontainer.zip
+aws s3 cp getcontainer.zip s3://amazon-s3-bucket-load-test-containerbucket-1v7ma7142raj7/getcontainer.zip
 
 ```
 

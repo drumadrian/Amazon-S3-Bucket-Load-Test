@@ -57,14 +57,6 @@ Parameters:
     AllowedPattern: '(?!-)[a-zA-Z0-9-.]{1,63}(?<!-)'
     ConstraintDescription: must be a valid DNS zone name.
 
-  InitialResourceRecord:
-    Type: String
-    Default: "0.0.0.0"
-    Description: The DNS value of the Amazon Route 53 record at initialization
-    ConstraintDescription: must be a valid IP address.
-
-
-
 
 Resources:
 
@@ -107,6 +99,7 @@ Resources:
         - "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
         - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
         - "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
+        - "arn:aws:iam::aws:policy/AmazonSQSFullAccess"
 
   ContainerCodeBuildRole:
     Type: AWS::IAM::Role
@@ -347,6 +340,7 @@ Resources:
           Value: 'LoadTest project'
 
   BucketNameDNSRecord:
+    DependsOn: LoadTestDNSzone
     Type: AWS::Route53::RecordSet
     Properties:
       HostedZoneName: !Join 
@@ -366,6 +360,7 @@ Resources:
         - !Sub "\"${StorageBucket}\""
 
   SQSqueueDNSRecord:
+    DependsOn: LoadTestDNSzone
     Type: AWS::Route53::RecordSet
     Properties:
       HostedZoneName: !Join 
