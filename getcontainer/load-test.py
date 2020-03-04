@@ -4,7 +4,8 @@ from botocore.exceptions import ClientError
 from datetime import datetime
 import dns.resolver
 import os 
-import pprint 
+import pprint
+import json 
 
 
 def get_queueURL():

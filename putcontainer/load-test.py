@@ -5,6 +5,7 @@ import dns.resolver
 import os 
 import pprint 
 import curses
+import json
 
 def get_queuename():
     bytes_response = dns.resolver.query("filesqueue.loadtest","TXT").response.answer[0][-1].strings[0]

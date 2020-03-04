@@ -646,7 +646,6 @@ Resources:
                 - "cleanupBucketOnDeleteFunction"
                 - "Arn"
           BucketName: !Sub '${StorageBucket.Arn}'
-        # BucketName: !Ref ArtifactStoreBucketName
 
   
   cleanupBucketOnDeleteFunction:
@@ -675,7 +674,6 @@ Resources:
                 - "cleanupBucketOnDeleteFunction2"
                 - "Arn"
           BucketName: !Sub '${ContainerBucket.Arn}'
-        # BucketName: !Ref ArtifactStoreBucketName
 
   
   cleanupBucketOnDeleteFunction2:
@@ -736,10 +734,10 @@ Resources:
               Fn::GetAtt: 
                 - "cleanupPutEcrOnDeleteFunction"
                 - "Arn"
-          ECRRepositoryARN: !Sub '${EcrRepository.Arn}'
+          ECRRepositoryARN: !Sub '${PUTEcrRepository.Arn}'
 
   cleanupPutEcrOnDeleteFunction:
-      DependsOn: EcrRepository
+      DependsOn: PUTEcrRepository
       Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
       Properties:
           Role: !GetAtt cleanupOnDeleteLambdaRole.Arn
@@ -763,10 +761,10 @@ Resources:
               Fn::GetAtt: 
                 - "cleanupGetEcrOnDeleteFunction"
                 - "Arn"
-          ECRRepositoryARN: !Sub '${EcrRepository.Arn}'
+          ECRRepositoryARN: !Sub '${GETEcrRepository.Arn}'
 
   cleanupGetEcrOnDeleteFunction:
-      DependsOn: EcrRepository
+      DependsOn: GETEcrRepository
       Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
       Properties:
           Role: !GetAtt cleanupOnDeleteLambdaRole.Arn
