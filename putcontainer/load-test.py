@@ -1,11 +1,25 @@
 import boto3
 from botocore.exceptions import NoCredentialsError
+from botocore.exceptions import ClientError
 from datetime import datetime
 import dns.resolver
 import os 
-import pprint 
-import curses
-import json
+import pprint
+import json 
+import time
+
+from aws_xray_sdk.core import xray_recorder
+from aws_xray_sdk.core import patch_all
+
+xray_recorder.configure(aws_xray_tracing_name='PUT - S3 Bucket Load Test Container')
+plugins = ('ECSPlugin','ElasticBeanstalkPlugin', 'EC2Plugin')
+xray_recorder.configure(plugins=plugins)
+logging.basicConfig(level='WARNING')
+logging.getLogger('aws_xray_sdk').setLevel(logging.DEBUG)
+
+patch_all()
+# https://docs.aws.amazon.com/xray/latest/devguide/xray-guide.pdf
+
 
 def get_queuename():
     bytes_response = dns.resolver.query("filesqueue.loadtest","TXT").response.answer[0][-1].strings[0]
@@ -61,25 +75,45 @@ def enqueue_object(bucketname, s3_file_name, queueURL, sqs_client):
 def start_uploads(bucketname, queueURL, sqs_client):
     var=0
     # while var < 100:
-    for var in range(100):
+    for var in range(1000):
     # while True:
+        # Start a segment
+        segment = xray_recorder.begin_segment('start_uploads loop')
+        xray_recorder.put_annotation("annotation1", "1000 objects per container");
+        xray_recorder.put_metadata("metadata1", "PUT Container start uploads Metadata");
+
         now = datetime.now() # current date and time
         print(now)
         # s3_file_name="diagram_" + now.strftime("%H:%M:%S:%f") + ".png"
         s3_file_name=now.strftime("%f_%H:%M:%S:%f") + "_diagram" + ".png"
         print(s3_file_name)
-        # uploaded = upload_to_bucket('/home/ec2-user/environment/Amazon-S3-Bucket-Load-Test/container/diagram.png', 'amazon-s3-bucket-load-test-storagebucket-knlgpd3wpz0n', s3_file_name)
-        # done = datetime.now()
+
+        # Start a subsegment for upload_to_bucket()
+        subsegment = xray_recorder.begin_subsegment('upload_to_bucket')
         uploaded = upload_to_bucket('/app/diagram.png', bucketname, s3_file_name)
+        # Close the subsegment and segment
+        xray_recorder.end_subsegment()
+
+        # Start a subsegment for enqueue_object()
+        subsegment = xray_recorder.begin_subsegment('enqueue_object')
         if uploaded:
             enqueue_object(bucketname, s3_file_name, queueURL, sqs_client)
         else:
             print("Error uploading object: {0} to bucket: {1}".format(s3_file_name, bucketname))
 
+        # Close the subsegment and segment
+        xray_recorder.end_subsegment()
+        xray_recorder.end_segment()
 
 
 
 if __name__ == '__main__':
+    
+    # Start a segment
+    segment = xray_recorder.begin_segment('__main__ segment')
+    # Start a subsegment
+    # subsegment = xray_recorder.begin_subsegment('subsegment_name')
+
     # Get the list of user's 
     # environment variables 
     env_var = os.environ 
@@ -88,6 +122,10 @@ if __name__ == '__main__':
     print("User's Environment variables:") 
     pprint.pprint(dict(env_var), width = 1) 
 
+    document = xray_recorder.current_segment()
+    # document = xray_recorder.current_subsegment()
+    document.set_user("PUT Container");
+
     QUEUEURL = get_queuename()
     BUCKETNAME = get_bucketname()
     
@@ -95,8 +133,8 @@ if __name__ == '__main__':
     sqs_client = boto3.client('sqs')
     start_uploads(BUCKETNAME, QUEUEURL, sqs_client)
 
-
-
+    # Close the segment
+    xray_recorder.end_segment()
 
 
 
