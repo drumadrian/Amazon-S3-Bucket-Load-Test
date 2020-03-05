@@ -110,7 +110,7 @@ def start_uploads(bucketname, queueURL, sqs_client):
 if __name__ == '__main__':
     
     # Start a segment
-    segment = xray_recorder.begin_segment('__main__ segment')
+    segment = xray_recorder.begin_segment('__main__segment')
     # Start a subsegment
     # subsegment = xray_recorder.begin_subsegment('subsegment_name')
 
