@@ -439,9 +439,10 @@ Resources:
           #     name: AWS_XRAY_DAEMON_ADDRESS
           #     value: xray-daemon:2000
           PortMappings:
-            ContainerPort: 2000
-            HostPort: 2000
-            Protocol: udp
+            -
+              ContainerPort: 2000
+              HostPort: 2000
+              Protocol: udp
           LogConfiguration:
             LogDriver: awslogs
             Options:
@@ -725,9 +726,10 @@ Resources:
           #     name: AWS_XRAY_DAEMON_ADDRESS
           #     value: xray-daemon:2000
           PortMappings:
-            ContainerPort: 2000
-            HostPort: 2000
-            Protocol: udp
+            -
+              ContainerPort: 2000
+              HostPort: 2000
+              Protocol: udp
           LogConfiguration:
             LogDriver: awslogs
             Options:
