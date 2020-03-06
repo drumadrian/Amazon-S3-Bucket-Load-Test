@@ -412,7 +412,7 @@ Resources:
           Name: !Sub ${AWS::StackName}-load-tester
           Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${PUTEcrRepository}:latest
           Memory: 2048
-          environment: 
+          Environment: 
             -
               name: AWS_REGION
               value: !Ref AWS::Region
@@ -431,7 +431,7 @@ Resources:
           Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${XRayEcrRepository}:latest
           cpu: 32
           Memory: 512
-          environment: 
+          Environment: 
             -
               name: AWS_REGION
               value: !Ref AWS::Region
@@ -553,7 +553,7 @@ Resources:
   #   Properties:
   #     Cpu: '512'
   #     ExecutionRoleArn: !GetAtt EcsTaskExecutionRole.Arn
-  #     Memory: '2048'
+  #     Memory: '4096'
   #     NetworkMode: awsvpc
   #     RequiresCompatibilities:
   #       - FARGATE
@@ -563,13 +563,25 @@ Resources:
   #         Essential: true
   #         Name: !Sub ${AWS::StackName}-xray-daemon
   #         Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${XRayEcrRepository}:latest
+  #         cpu: 32
   #         Memory: 512
+  #         Environment: 
+  #           -
+  #             name: AWS_REGION
+  #             value: !Ref AWS::Region
+  #           # -
+  #         #     name: AWS_XRAY_DAEMON_ADDRESS
+  #         #     value: xray-daemon:2000
+  #         PortMappings:
+  #           ContainerPort: 2000
+  #           HostPort: 2000
+  #           Protocol: udp
   #         LogConfiguration:
   #           LogDriver: awslogs
   #           Options:
   #             awslogs-group: !Ref XRayEcsCloudWatchLogGroup
   #             awslogs-region: !Ref AWS::Region
-  #             awslogs-stream-prefix: "load-testing"
+  #             awslogs-stream-prefix: "XRay-load-testing"
 
   XRayEcsCloudWatchLogGroup:
     Type: AWS::Logs::LogGroup
@@ -686,7 +698,7 @@ Resources:
           Name: !Sub ${AWS::StackName}-load-tester
           Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${GETEcrRepository}:latest
           Memory: 2048
-          environment: 
+          Environment: 
             -
               name: AWS_REGION
               value: !Ref AWS::Region
@@ -705,7 +717,7 @@ Resources:
           Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${XRayEcrRepository}:latest
           cpu: 32
           Memory: 512
-          environment: 
+          Environment: 
             -
               name: AWS_REGION
               value: !Ref AWS::Region
@@ -853,7 +865,7 @@ Resources:
       Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
       # Type: "AWS::Lambda::Function"
       Properties:
-          Role: !GetAtt cleanupBucketOnDeleteLambdaRole.Arn
+          Role: !GetAtt cleanupOnDeleteLambdaRole.Arn
           CodeUri: cleanupBucketOnDelete/
           Handler: cleanupBucketOnDelete.lambda_handler
           Runtime: python3.7
@@ -881,7 +893,7 @@ Resources:
       Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
       # Type: "AWS::Lambda::Function"
       Properties:
-          Role: !GetAtt cleanupBucketOnDeleteLambdaRole.Arn
+          Role: !GetAtt cleanupOnDeleteLambdaRole.Arn
           CodeUri: cleanupBucketOnDelete/
           Handler: cleanupBucketOnDelete.lambda_handler
           Runtime: python3.7
@@ -892,36 +904,36 @@ Resources:
           Description: cleanup Bucket on Delete Lambda Lambda function.
 
 
-  cleanupBucketOnDeleteLambdaRole:
-      Type: AWS::IAM::Role
-      Properties:
-          AssumeRolePolicyDocument:
-              Version: '2012-10-17'
-              Statement:
-                  - Action: ['sts:AssumeRole']
-                    Effect: Allow
-                    Principal:
-                      Service: [lambda.amazonaws.com]
+  # cleanupBucketOnDeleteLambdaRole:
+  #     Type: AWS::IAM::Role
+  #     Properties:
+  #         AssumeRolePolicyDocument:
+  #             Version: '2012-10-17'
+  #             Statement:
+  #                 - Action: ['sts:AssumeRole']
+  #                   Effect: Allow
+  #                   Principal:
+  #                     Service: [lambda.amazonaws.com]
 
 
-  cleanupBucketOnDeleteLambdaRolePolicy: 
-      Type: "AWS::IAM::Policy"
-      Properties: 
-          PolicyName: !Sub "${AWS::StackName}-cleanupBucketOnDeleteLambdaRolePolicy"
-          PolicyDocument: 
-              Version: "2012-10-17"
-              Statement: 
-                  - Effect: "Allow"
-                    Action: 
-                          - "s3:*"
-                          - "logs:*"
-                    Resource: "*"
-                  - Effect: "Deny"
-                    Action: 
-                          - "s3:DeleteBucket"
-                    Resource: "*"
-          Roles: 
-              - Ref: "cleanupBucketOnDeleteLambdaRole"
+  # cleanupBucketOnDeleteLambdaRolePolicy: 
+  #     Type: "AWS::IAM::Policy"
+  #     Properties: 
+  #         PolicyName: !Sub "${AWS::StackName}-cleanupBucketOnDeleteLambdaRolePolicy"
+  #         PolicyDocument: 
+  #             Version: "2012-10-17"
+  #             Statement: 
+  #                 - Effect: "Allow"
+  #                   Action: 
+  #                         - "s3:*"
+  #                         - "logs:*"
+  #                   Resource: "*"
+  #                 - Effect: "Deny"
+  #                   Action: 
+  #                         - "s3:DeleteBucket"
+  #                   Resource: "*"
+  #         Roles: 
+  #             - Ref: "cleanupBucketOnDeleteLambdaRole"
 
 
 # -------------------------------------------------------
@@ -982,14 +994,14 @@ Resources:
 # -------------------------------------------------------
 
   cleanupXRayEcrOnDelete:
-      DependsOn: cleanupXrayEcrOnDeleteFunction
+      DependsOn: cleanupXRayEcrOnDeleteFunction
       Type: Custom::cleanupxrayrepository
       Properties:
           ServiceToken: 
               Fn::GetAtt: 
-                - "cleanupxrayEcrOnDeleteFunction"
+                - "cleanupXRayEcrOnDeleteFunction"
                 - "Arn"
-          ECRRepositoryARN: !Sub '${GETXRayRepository.Arn}'
+          ECRRepositoryARN: !Sub '${XRayEcrRepository.Arn}'
 
   cleanupXRayEcrOnDeleteFunction:
       DependsOn: XRayEcrRepository
@@ -1030,6 +1042,7 @@ Resources:
                   - Effect: "Allow"
                     Action: 
                           - "logs:*"
+                          - "s3:*"
                           - "ecr:*"
                     Resource: "*"
                   - Effect: "Deny"
