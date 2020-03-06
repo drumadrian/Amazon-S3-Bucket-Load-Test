@@ -40,6 +40,10 @@ These steps are guidance and can be executed out of order by an experienced oper
 ###### (to be uploaed to S3 for container build pipeline):
 
 ```
+rm xraycontainer.zip
+
+zip -r xraycontainer.zip ./xraycontainer 
+
 rm putcontainer.zip
 
 zip -r putcontainer.zip ./putcontainer 
@@ -55,10 +59,14 @@ aws s3 cp getcontainer.zip s3://<your_bucket_name>/getcontainer.zip
 
    Example for bucket name: amazon-s3-bucket-load-test-containerbucket-15d8doiyy402t
 
+rm xraycontainer.zip
+zip -r xraycontainer.zip ./xraycontainer 
 rm putcontainer.zip
 zip -r putcontainer.zip ./putcontainer 
 rm getcontainer.zip
 zip -r getcontainer.zip ./getcontainer 
+
+aws s3 cp xraycontainer.zip s3://amazon-s3-bucket-load-test-containerbucket-1v7ma7142raj7/xraycontainer.zip
 aws s3 cp putcontainer.zip s3://amazon-s3-bucket-load-test-containerbucket-1v7ma7142raj7/putcontainer.zip
 aws s3 cp getcontainer.zip s3://amazon-s3-bucket-load-test-containerbucket-1v7ma7142raj7/getcontainer.zip
 

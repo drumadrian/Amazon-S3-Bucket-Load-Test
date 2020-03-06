@@ -131,6 +131,7 @@ Resources:
                 Resource:
                   - !Sub ${GETEcrRepository.Arn}
                   - !Sub ${PUTEcrRepository.Arn}
+                  - !Sub ${XRayEcrRepository.Arn}
               -
                 Effect: Allow
                 Action:
@@ -179,6 +180,13 @@ Resources:
                 Resource:
                   - !Sub ${ContainerBucket.Arn}
                   - !Sub ${ContainerBucket.Arn}/*
+              -
+                Effect: Allow
+                Action:
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                Resource:
+                  - !Sub ${XRayContainerCodeBuild.Arn}
               -
                 Effect: Allow
                 Action:
@@ -385,7 +393,7 @@ Resources:
 # ========================================================================
   PUTEcrRepository:
     # stack delte will fail as the repo is not empty.
-    DeletionPolicy: Retain
+    # DeletionPolicy: Retain
     Type: AWS::ECR::Repository
 
   PUTEcsTaskDefinition:
@@ -393,7 +401,7 @@ Resources:
     Properties:
       Cpu: '512'
       ExecutionRoleArn: !GetAtt EcsTaskExecutionRole.Arn
-      Memory: '2048'
+      Memory: '4096'
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
@@ -404,12 +412,42 @@ Resources:
           Name: !Sub ${AWS::StackName}-load-tester
           Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${PUTEcrRepository}:latest
           Memory: 2048
+          environment: 
+            -
+              name: AWS_REGION
+              value: !Ref AWS::Region
+            # -
+          #     name: AWS_XRAY_DAEMON_ADDRESS
+          #     value: xray-daemon:2000
           LogConfiguration:
             LogDriver: awslogs
             Options:
               awslogs-group: !Ref PUTEcsCloudWatchLogGroup
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: "load-testing"
+        -
+          Essential: true
+          Name: !Sub ${AWS::StackName}-xray-daemon
+          Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${XRayEcrRepository}:latest
+          cpu: 32
+          Memory: 512
+          environment: 
+            -
+              name: AWS_REGION
+              value: !Ref AWS::Region
+            # -
+          #     name: AWS_XRAY_DAEMON_ADDRESS
+          #     value: xray-daemon:2000
+          PortMappings:
+            ContainerPort: 2000
+            HostPort: 2000
+            Protocol: udp
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref XRayEcsCloudWatchLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: "PUT-load-testing"
 
   PUTEcsCloudWatchLogGroup:
     Type: AWS::Logs::LogGroup
@@ -502,7 +540,126 @@ Resources:
                   !Ref PUTContainerCodeBuild
 
 
+# ========================================================================
+## Resources for X-Ray Container 
+# ========================================================================
+  XRayEcrRepository:
+    # stack delte will fail as the repo is not empty.
+    # DeletionPolicy: Retain
+    Type: AWS::ECR::Repository
 
+  # XRayEcsTaskDefinition:
+  #   Type: AWS::ECS::TaskDefinition
+  #   Properties:
+  #     Cpu: '512'
+  #     ExecutionRoleArn: !GetAtt EcsTaskExecutionRole.Arn
+  #     Memory: '2048'
+  #     NetworkMode: awsvpc
+  #     RequiresCompatibilities:
+  #       - FARGATE
+  #     TaskRoleArn: !GetAtt EcsTaskExecutionRole.Arn
+  #     ContainerDefinitions:
+  #       -
+  #         Essential: true
+  #         Name: !Sub ${AWS::StackName}-xray-daemon
+  #         Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${XRayEcrRepository}:latest
+  #         Memory: 512
+  #         LogConfiguration:
+  #           LogDriver: awslogs
+  #           Options:
+  #             awslogs-group: !Ref XRayEcsCloudWatchLogGroup
+  #             awslogs-region: !Ref AWS::Region
+  #             awslogs-stream-prefix: "load-testing"
+
+  XRayEcsCloudWatchLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 365
+
+  XRayContainerCodeBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Description: Builds X-Ray container
+      TimeoutInMinutes: 20
+      ServiceRole: !GetAtt ContainerCodeBuildRole.Arn
+      EncryptionKey: !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/s3
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_MEDIUM
+        Image: aws/codebuild/docker:18.09.0
+        EnvironmentVariables:
+          -
+            Name: REPOSITORY
+            Value: !Sub ${XRayEcrRepository}
+          -
+            Name: REPOSITORY_URI
+            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${XRayEcrRepository}
+          -
+            Name: SQS_QUEUE_URL
+            Value: !Ref EcsTaskSqsQueue
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: !Sub |
+          version: 0.2
+          phases:
+              pre_build:
+                commands:
+                  - echo $REPOSITORY
+                  - echo $REPOSITORY_URI
+                  - $(aws ecr get-login --region ${AWS::Region} --no-include-email)
+              build:
+                commands:
+                  - cd xraycontainer
+                  - docker build -t $REPOSITORY:latest .
+                  - ls -al
+                  - docker tag $REPOSITORY:latest $REPOSITORY_URI:latest
+              post_build:
+                commands:
+                  - docker push $REPOSITORY_URI:latest
+
+  XRayContainerCodePipeline:
+    #wait for the container
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn: !GetAtt ContainerCodePipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ContainerBucket
+      Stages:
+        -
+          Name: Source
+          Actions:
+            -
+              Name: Source
+              ActionTypeId:
+                Category: Source
+                Provider: S3
+                Owner: AWS
+                Version: '1'
+              OutputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                S3Bucket: !Ref ContainerBucket
+                S3ObjectKey: xraycontainer.zip
+        -
+          Name: Build
+          Actions:
+            -
+              Name: Build
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: '1'
+                Provider: CodeBuild
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: BuildOutput
+              Configuration:
+                ProjectName:
+                  !Ref XRayContainerCodeBuild
 
 
 # ========================================================================
@@ -510,7 +667,7 @@ Resources:
 # ========================================================================
   GETEcrRepository:
     # stack delte will fail as the repo is not empty.
-    DeletionPolicy: Retain
+    # DeletionPolicy: Retain
     Type: AWS::ECR::Repository
 
   GETEcsTaskDefinition:
@@ -518,7 +675,7 @@ Resources:
     Properties:
       Cpu: '512'
       ExecutionRoleArn: !GetAtt EcsTaskExecutionRole.Arn
-      Memory: '2048'
+      Memory: '4096'
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
@@ -529,12 +686,42 @@ Resources:
           Name: !Sub ${AWS::StackName}-load-tester
           Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${GETEcrRepository}:latest
           Memory: 2048
+          environment: 
+            -
+              name: AWS_REGION
+              value: !Ref AWS::Region
+            # -
+          #     name: AWS_XRAY_DAEMON_ADDRESS
+          #     value: xray-daemon:2000
           LogConfiguration:
             LogDriver: awslogs
             Options:
               awslogs-group: !Ref GETEcsCloudWatchLogGroup
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: "load-testing"
+        -
+          Essential: true
+          Name: !Sub ${AWS::StackName}-xray-daemon
+          Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${XRayEcrRepository}:latest
+          cpu: 32
+          Memory: 512
+          environment: 
+            -
+              name: AWS_REGION
+              value: !Ref AWS::Region
+            # -
+          #     name: AWS_XRAY_DAEMON_ADDRESS
+          #     value: xray-daemon:2000
+          PortMappings:
+            ContainerPort: 2000
+            HostPort: 2000
+            Protocol: udp
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref XRayEcsCloudWatchLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: "GET-load-testing"
 
   GETEcsCloudWatchLogGroup:
     Type: AWS::Logs::LogGroup
@@ -625,6 +812,24 @@ Resources:
               Configuration:
                 ProjectName:
                   !Ref GETContainerCodeBuild
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -772,6 +977,34 @@ Resources:
                   registryId: !Ref AWS::AccountId
           Timeout: 30
           Description: Delete GET ECR repo Lambda function.
+
+
+# -------------------------------------------------------
+
+  cleanupXRayEcrOnDelete:
+      DependsOn: cleanupXrayEcrOnDeleteFunction
+      Type: Custom::cleanupxrayrepository
+      Properties:
+          ServiceToken: 
+              Fn::GetAtt: 
+                - "cleanupxrayEcrOnDeleteFunction"
+                - "Arn"
+          ECRRepositoryARN: !Sub '${GETXRayRepository.Arn}'
+
+  cleanupXRayEcrOnDeleteFunction:
+      DependsOn: XRayEcrRepository
+      Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+      Properties:
+          Role: !GetAtt cleanupOnDeleteLambdaRole.Arn
+          CodeUri: cleanupEcrOnDelete/
+          Handler: cleanupEcrOnDelete.lambda_handler
+          Runtime: python3.7
+          Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
+              Variables:
+                  repository_name: !Ref XRayEcrRepository
+                  registryId: !Ref AWS::AccountId
+          Timeout: 30
+          Description: Delete X-Ray ECR repo Lambda function.
 
 
 # -------------------------------------------------------
