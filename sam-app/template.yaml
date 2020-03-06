@@ -429,7 +429,7 @@ Resources:
           Essential: true
           Name: !Sub ${AWS::StackName}-xray-daemon
           Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${XRayEcrRepository}:latest
-          cpu: 32
+          Cpu: 32
           Memory: 512
           Environment: 
             -
@@ -715,7 +715,7 @@ Resources:
           Essential: true
           Name: !Sub ${AWS::StackName}-xray-daemon
           Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${XRayEcrRepository}:latest
-          cpu: 32
+          Cpu: 32
           Memory: 512
           Environment: 
             -
