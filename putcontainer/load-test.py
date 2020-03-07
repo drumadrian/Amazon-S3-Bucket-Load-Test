@@ -13,11 +13,11 @@ from aws_xray_sdk.core import patch_all
 
 xray_recorder.configure(
     # service='PUT - S3 Bucket Load Test Container',
-    sampling=False,
-    context_missing='LOG_ERROR',
-    plugins=('ECSPlugin'),
+    # sampling=False,
+    context_missing='LOG_ERROR'
+    # plugins=('ECSPlugin'),
     # daemon_address='127.0.0.1:3000',
-    dynamic_naming='*mysite.com*'
+    # dynamic_naming='*put.loadtest*'
 )
 
 
@@ -25,7 +25,7 @@ xray_recorder.configure(
 # plugins = ('ECSPlugin','ElasticBeanstalkPlugin', 'EC2Plugin')
 # xray_recorder.configure(plugins=plugins)
 
-patch_all()
+# patch_all()
 # https://docs.aws.amazon.com/xray/latest/devguide/xray-guide.pdf
 
 
@@ -85,10 +85,12 @@ def start_uploads(bucketname, queueURL, sqs_client):
     # while var < 100:
     for var in range(1000):
     # while True:
+
+        xray_recorder.end_segment()
         # Start a segment
-        segment = xray_recorder.begin_segment()
-        xray_recorder.put_annotation("annotation1", "1000 objects per container");
-        xray_recorder.put_metadata("metadata1", "PUT Container start uploads Metadata");
+        segment = xray_recorder.begin_segment('upload')
+        # xray_recorder.put_annotation("annotation1", "1000 objects per container");
+        # xray_recorder.put_metadata("metadata1", "PUT Container start uploads Metadata");
 
         now = datetime.now() # current date and time
         print(now)
@@ -111,7 +113,7 @@ def start_uploads(bucketname, queueURL, sqs_client):
 
         # Close the subsegment and segment
         # xray_recorder.end_subsegment()
-        xray_recorder.end_segment()
+        xray_recorder.end_segment('upload')
 
 
 

@@ -98,7 +98,7 @@ Resources:
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
         - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
-        - "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
+        - "arn:aws:iam::aws:policy/AWSXrayFullAccess"
         - "arn:aws:iam::aws:policy/AmazonSQSFullAccess"
 
   ContainerCodeBuildRole:
@@ -416,9 +416,9 @@ Resources:
             -
               Name: AWS_REGION
               Value: !Ref AWS::Region
-            -
-              Name: AWS_XRAY_DAEMON_ADDRESS
-              Value: xray-daemon:2000
+            # -
+            #   Name: AWS_XRAY_DAEMON_ADDRESS
+            #   Value: xray-daemon:2000
           LogConfiguration:
             LogDriver: awslogs
             Options:
