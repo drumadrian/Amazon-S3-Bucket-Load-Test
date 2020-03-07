@@ -57,7 +57,7 @@ aws s3 cp putcontainer.zip s3://<your_bucket_name>/putcontainer.zip
 aws s3 cp getcontainer.zip s3://<your_bucket_name>/getcontainer.zip
 
 
-   Example for bucket name: amazon-s3-bucket-load-test-containerbucket-15d8doiyy402t
+   Example for bucket name: amazon-s3-bucket-load-test-containerbucket-wafvaz6lredt
 
 rm xraycontainer.zip
 zip -r xraycontainer.zip ./xraycontainer 
@@ -66,9 +66,9 @@ zip -r putcontainer.zip ./putcontainer
 rm getcontainer.zip
 zip -r getcontainer.zip ./getcontainer 
 
-aws s3 cp xraycontainer.zip s3://amazon-s3-bucket-load-test-containerbucket-1v7ma7142raj7/xraycontainer.zip
-aws s3 cp putcontainer.zip s3://amazon-s3-bucket-load-test-containerbucket-1v7ma7142raj7/putcontainer.zip
-aws s3 cp getcontainer.zip s3://amazon-s3-bucket-load-test-containerbucket-1v7ma7142raj7/getcontainer.zip
+aws s3 cp xraycontainer.zip s3://amazon-s3-bucket-load-test-containerbucket-wafvaz6lredt/xraycontainer.zip
+aws s3 cp putcontainer.zip s3://amazon-s3-bucket-load-test-containerbucket-wafvaz6lredt/putcontainer.zip
+aws s3 cp getcontainer.zip s3://amazon-s3-bucket-load-test-containerbucket-wafvaz6lredt/getcontainer.zip
 
 ```
 
