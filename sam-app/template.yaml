@@ -52,7 +52,7 @@ Parameters:
 
   HostedZone:
     Type: String
-    Default: "loadtest"
+    Default: "loadtest.com"
     Description: The DNS name of the Amazon Route 53 hosted zone
     AllowedPattern: '(?!-)[a-zA-Z0-9-.]{1,63}(?<!-)'
     ConstraintDescription: must be a valid DNS zone name.
@@ -363,7 +363,7 @@ Resources:
           - !Ref HostedZone
           - .
       Type: TXT
-      TTL: '60'
+      TTL: '30'
       ResourceRecords: 
         - !Sub "\"${StorageBucket}\""
 
@@ -383,7 +383,7 @@ Resources:
           - !Ref HostedZone
           - .
       Type: TXT
-      TTL: '60'
+      TTL: '30'
       ResourceRecords: 
         - !Sub "\"${EcsTaskSqsQueue}\""
 
