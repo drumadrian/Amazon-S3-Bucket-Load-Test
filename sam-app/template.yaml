@@ -409,7 +409,7 @@ Resources:
       ContainerDefinitions:
         -
           Essential: true
-          Name: !Sub ${AWS::StackName}-load-tester
+          Name: !Sub ${AWS::StackName}-PUT-load-tester
           Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${PUTEcrRepository}:latest
           Memory: 2048
           Environment: 
@@ -694,7 +694,7 @@ Resources:
       ContainerDefinitions:
         -
           Essential: true
-          Name: !Sub ${AWS::StackName}-load-tester
+          Name: !Sub ${AWS::StackName}-GET-load-tester
           Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${GETEcrRepository}:latest
           Memory: 2048
           Environment: 
