@@ -626,9 +626,9 @@ Resources:
               build:
                 commands:
                   - cd xraycontainer
-                  - docker build -t $REPOSITORY:latest .
+                  - docker pull amazon/aws-xray-daemon
                   - ls -al
-                  - docker tag $REPOSITORY:latest $REPOSITORY_URI:latest
+                  - docker tag amazon/aws-xray-daemon $REPOSITORY_URI:latest
               post_build:
                 commands:
                   - docker push $REPOSITORY_URI:latest

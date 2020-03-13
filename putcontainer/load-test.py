@@ -96,8 +96,8 @@ def start_uploads(bucketname, queueURL, sqs_client):
 
         # Start a subsegment for upload_to_bucket()
         subsegment = xray_recorder.begin_subsegment('function: upload_to_bucket')
-        # uploaded = upload_to_bucket('/app/diagram.png', bucketname, s3_file_name)
-        uploaded = upload_to_bucket('diagram.png', bucketname, s3_file_name)
+        uploaded = upload_to_bucket('/app/diagram.png', bucketname, s3_file_name)
+        # uploaded = upload_to_bucket('diagram.png', bucketname, s3_file_name)
         # Close the subsegment
         xray_recorder.end_subsegment()
 
@@ -114,13 +114,10 @@ def start_uploads(bucketname, queueURL, sqs_client):
 
 if __name__ == '__main__':
     
-    now = datetime.now() # current date and time
-    time_now = now.strftime("%H:%M:%S.%f")
-
     # Start a segment
     segment = xray_recorder.begin_segment('function: __main__')
-    # xray_recorder.put_annotation("annotation1", "10");
-    # xray_recorder.put_metadata("metadata1", "PUTmetadata");
+    now = datetime.now() # current date and time
+    time_now = now.strftime("%H:%M:%S.%f")
     xray_recorder.put_annotation("Version", "4.0");
     xray_recorder.put_annotation("Developer", "Adrian");
     xray_recorder.put_metadata("function", __name__);
@@ -137,16 +134,16 @@ if __name__ == '__main__':
     # Start a subsegment for function: get_queuename 
     subsegment = xray_recorder.begin_subsegment('function: get_queuename')
     subsegment.put_annotation("Subsegment_Developer", "Adrian");
-    # QUEUEURL = get_queuename()
-    QUEUEURL = "https://sqs.us-west-2.amazonaws.com/696965430582/Amazon-S3-Bucket-Load-Test-EcsTaskSqsQueue-1HTOHJVBT359V"
+    QUEUEURL = get_queuename()
+    # QUEUEURL = "https://sqs.us-west-2.amazonaws.com/696965430582/Amazon-S3-Bucket-Load-Test-EcsTaskSqsQueue-1HTOHJVBT359V"
     subsegment.put_metadata("QUEUEURL", QUEUEURL);
     xray_recorder.end_subsegment()
 
     # Start a subsegment for function: get_bucketname 
     subsegment = xray_recorder.begin_subsegment('function: get_bucketname')
     subsegment.put_annotation("Subsegment_Developer", "Adrian");
-    # BUCKETNAME = get_bucketname()
-    BUCKETNAME = "amazon-s3-bucket-load-test-storagebucket-18u2ld8f2gi2i"
+    BUCKETNAME = get_bucketname()
+    # BUCKETNAME = "amazon-s3-bucket-load-test-storagebucket-18u2ld8f2gi2i"
     subsegment.put_metadata("BUCKETNAME", BUCKETNAME);
     xray_recorder.end_subsegment()
     
