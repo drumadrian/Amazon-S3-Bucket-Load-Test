@@ -28,6 +28,7 @@ xray_recorder.configure(
 # patch_all()
 # https://docs.aws.amazon.com/xray/latest/devguide/xray-guide.pdf
 
+OBJECTS_PER_CONTAINER = 10
 
 def get_queuename():
     bytes_response = dns.resolver.query("filesqueue.loadtest.com","TXT").response.answer[0][-1].strings[0]
@@ -83,8 +84,7 @@ def enqueue_object(bucketname, s3_file_name, queueURL, sqs_client):
 
 def start_uploads(bucketname, queueURL, sqs_client):
     var=0
-    # while var < 100:
-    for var in range(10):
+    for var in range(OBJECTS_PER_CONTAINER):
     # while True:
 
         now = datetime.now() # current date and time
@@ -118,13 +118,13 @@ if __name__ == '__main__':
     segment = xray_recorder.begin_segment('function: __main__')
     now = datetime.now() # current date and time
     time_now = now.strftime("%H:%M:%S.%f")
-    xray_recorder.put_annotation("Version", "4.0");
-    xray_recorder.put_annotation("Developer", "Adrian");
-    xray_recorder.put_metadata("function", __name__);
-    xray_recorder.put_metadata("objects per container", 10);
-    xray_recorder.put_metadata("system time H:M:S.milliseconds", time_now);
+    xray_recorder.put_annotation("Version", "4.0")
+    xray_recorder.put_annotation("Developer", "Adrian")
+    xray_recorder.put_metadata("function", __name__)
+    xray_recorder.put_metadata("objects per container", OBJECTS_PER_CONTAINER)
+    xray_recorder.put_metadata("system time H:M:S.milliseconds", time_now)
     document = xray_recorder.current_segment()
-    document.set_user("PUT Container User");
+    document.set_user("PUT Container User")
 
     # Get and Print the list of user's environment variables 
     env_var = os.environ 
@@ -133,18 +133,18 @@ if __name__ == '__main__':
 
     # Start a subsegment for function: get_queuename 
     subsegment = xray_recorder.begin_subsegment('function: get_queuename')
-    subsegment.put_annotation("Subsegment_Developer", "Adrian");
+    subsegment.put_annotation("Subsegment_Developer", "Adrian")
     QUEUEURL = get_queuename()
     # QUEUEURL = "https://sqs.us-west-2.amazonaws.com/696965430582/Amazon-S3-Bucket-Load-Test-EcsTaskSqsQueue-1HTOHJVBT359V"
-    subsegment.put_metadata("QUEUEURL", QUEUEURL);
+    subsegment.put_metadata("QUEUEURL", QUEUEURL)
     xray_recorder.end_subsegment()
 
     # Start a subsegment for function: get_bucketname 
     subsegment = xray_recorder.begin_subsegment('function: get_bucketname')
-    subsegment.put_annotation("Subsegment_Developer", "Adrian");
+    subsegment.put_annotation("Subsegment_Developer", "Adrian")
     BUCKETNAME = get_bucketname()
     # BUCKETNAME = "amazon-s3-bucket-load-test-storagebucket-18u2ld8f2gi2i"
-    subsegment.put_metadata("BUCKETNAME", BUCKETNAME);
+    subsegment.put_metadata("BUCKETNAME", BUCKETNAME)
     xray_recorder.end_subsegment()
     
     sqs_client = boto3.client('sqs')

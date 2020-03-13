@@ -435,9 +435,6 @@ Resources:
             -
               Name: AWS_REGION
               Value: !Ref AWS::Region
-            # -
-            #   Name: AWS_XRAY_DAEMON_ADDRESS
-            #   Value: xray-daemon:2000
           LogConfiguration:
             LogDriver: awslogs
             Options:
@@ -549,41 +546,41 @@ Resources:
     # DeletionPolicy: Retain
     Type: AWS::ECR::Repository
 
-  XRayEcsTaskDefinition:
-    Type: AWS::ECS::TaskDefinition
-    Properties:
-      Cpu: '512'
-      ExecutionRoleArn: !GetAtt EcsTaskExecutionRole.Arn
-      Memory: '4096'
-      NetworkMode: awsvpc
-      RequiresCompatibilities:
-        - "FARGATE"
-      TaskRoleArn: !GetAtt EcsTaskExecutionRole.Arn
-      ContainerDefinitions:
-        -
-          Essential: true
-          Name: !Sub ${AWS::StackName}-xray-daemon
-          Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${XRayEcrRepository}:latest
-          Cpu: 32
-          Memory: 512
-          Environment: 
-            -
-              Name: AWS_REGION
-              Value: !Ref AWS::Region
-            # -
-          #     Name: AWS_XRAY_DAEMON_ADDRESS
-          #     Value: xray-daemon:2000
-          LogConfiguration:
-            LogDriver: awslogs
-            Options:
-              awslogs-group: !Ref XRayEcsCloudWatchLogGroup
-              awslogs-region: !Ref AWS::Region
-              awslogs-stream-prefix: "XRay-load-testing"
-          PortMappings:
-            -
-              ContainerPort: 2000
-              # HostPort: 2000
-              Protocol: udp
+  # XRayEcsTaskDefinition:
+  #   Type: AWS::ECS::TaskDefinition
+  #   Properties:
+  #     Cpu: '512'
+  #     ExecutionRoleArn: !GetAtt EcsTaskExecutionRole.Arn
+  #     Memory: '4096'
+  #     NetworkMode: awsvpc
+  #     RequiresCompatibilities:
+  #       - "FARGATE"
+  #     TaskRoleArn: !GetAtt EcsTaskExecutionRole.Arn
+  #     ContainerDefinitions:
+  #       -
+  #         Essential: true
+  #         Name: !Sub ${AWS::StackName}-xray-daemon
+  #         Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${XRayEcrRepository}:latest
+  #         Cpu: 32
+  #         Memory: 512
+  #         Environment: 
+  #           -
+  #             Name: AWS_REGION
+  #             Value: !Ref AWS::Region
+  #           # -
+  #         #     Name: AWS_XRAY_DAEMON_ADDRESS
+  #         #     Value: xray-daemon:2000
+  #         LogConfiguration:
+  #           LogDriver: awslogs
+  #           Options:
+  #             awslogs-group: !Ref XRayEcsCloudWatchLogGroup
+  #             awslogs-region: !Ref AWS::Region
+  #             awslogs-stream-prefix: "XRay-load-testing"
+  #         PortMappings:
+  #           -
+  #             ContainerPort: 2000
+  #             # HostPort: 2000
+  #             Protocol: udp
 
   XRayEcsCloudWatchLogGroup:
     Type: AWS::Logs::LogGroup
@@ -723,9 +720,6 @@ Resources:
             -
               Name: AWS_REGION
               Value: !Ref AWS::Region
-            -
-              Name: AWS_XRAY_DAEMON_ADDRESS
-              Value: xray-daemon:2000
           LogConfiguration:
             LogDriver: awslogs
             Options:

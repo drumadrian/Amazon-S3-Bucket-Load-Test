@@ -11,13 +11,29 @@ import time
 from aws_xray_sdk.core import xray_recorder
 from aws_xray_sdk.core import patch_all
 
-patch_all()
+xray_recorder.configure(
+    # service='PUT - S3 Bucket Load Test Container',
+    # sampling=False,
+    # context_missing='LOG_ERROR'
+    # plugins=('ECSPlugin')
+    # daemon_address='127.0.0.1:3000',
+    # dynamic_naming='*put.loadtest*'
+)
 
 
-def get_queueURL():
-    bytes_response = dns.resolver.query("filesqueue.loadtest","TXT").response.answer[0][-1].strings[0]
+# xray_recorder.configure(service='PUT - S3 Bucket Load Test Container')
+# plugins = ('ECSPlugin','ElasticBeanstalkPlugin', 'EC2Plugin')
+# xray_recorder.configure(plugins=plugins)
+
+# patch_all()
+# https://docs.aws.amazon.com/xray/latest/devguide/xray-guide.pdf
+
+OBJECTS_PER_CONTAINER = 10
+
+def get_queuename():
+    bytes_response = dns.resolver.query("filesqueue.loadtest.com","TXT").response.answer[0][-1].strings[0]
     response = bytes_response.decode("utf-8")
-    print("filesqueue.loadtest={0}".format(response))
+    print("\n filesqueue.loadtest.com= {0}\n".format(response))
     print(response)
     return response
 
@@ -71,15 +87,37 @@ def dequeue_message(QUEUEURL, sqs_client):
 
 
 def start_downloads(QUEUEURL, sqs_client, s3_client):
-    # for var in range(100):
-    while True:
-        now = datetime.now() # current date and time
-        print("now={0}".format(now))
+    var=0
+    for var in range(OBJECTS_PER_CONTAINER):
+    # while True:
 
+        now = datetime.now() # current date and time
+        time_now = now.strftime("%H:%M:%S.%f")
+        print("\n In start_downloads() Time now: " + time_now)
+
+        # Start a subsegment for dequeue_message()
+        subsegment = xray_recorder.begin_subsegment('function: dequeue_message')
         message = dequeue_message(QUEUEURL, sqs_client)
-        print("message={0}".format(message))
+        xray_recorder.put_metadata("message from dequeue_message()", message)
+        print("\n message={0}\n".format(message))
+        # Close the subsegment
+        xray_recorder.end_subsegment()
+
+        # Start a subsegment for get_object()
+        subsegment = xray_recorder.begin_subsegment('function: get_object')
         bucketname = message[0]
         objectkey = message[1]
+
+        now = datetime.now() # current date and time
+        time_now = now.strftime("%H:%M:%S.%f")
+        xray_recorder.put_annotation("Version", "1.0")
+        xray_recorder.put_annotation("Developer", "Adrian")
+        xray_recorder.put_metadata("function", __name__)
+        xray_recorder.put_metadata("objects per container", OBJECTS_PER_CONTAINER)
+        xray_recorder.put_metadata("system time H:M:S.milliseconds", time_now)
+        document = xray_recorder.current_segment()
+        document.set_user("S3 GET User")
+
         if bucketname != "wait":
             try:
                 get_object_response = s3_client.get_object(
@@ -105,23 +143,70 @@ def start_downloads(QUEUEURL, sqs_client, s3_client):
             except ClientError as e:
                 print("Error downloading object: {0} from bucket: {1}".format(objectkey, bucketname))
 
+        # Close the subsegment
+        xray_recorder.end_subsegment()
+        # Set the user back to: GET Container User
+        document = xray_recorder.current_segment()
+        document.set_user("GET Container User")
 
 
 if __name__ == '__main__':
-    # Get the list of user's 
-    # environment variables 
+
+    # Start a segment
+    segment = xray_recorder.begin_segment('function: __main__')
+    now = datetime.now() # current date and time
+    time_now = now.strftime("%H:%M:%S.%f")
+    xray_recorder.put_annotation("Version", "4.0")
+    xray_recorder.put_annotation("Developer", "Adrian")
+    xray_recorder.put_metadata("function", __name__)
+    xray_recorder.put_metadata("objects per container", OBJECTS_PER_CONTAINER)
+    xray_recorder.put_metadata("system time H:M:S.milliseconds", time_now)
+    document = xray_recorder.current_segment()
+    document.set_user("GET Container User")
+
+    # Get and Print the list of user's environment variables 
     env_var = os.environ 
-    # Print the list of user's 
-    # environment variables 
-    print("User's Environment variable:") 
+    print("\n User's Environment variables:") 
     pprint.pprint(dict(env_var), width = 1) 
 
-    QUEUEURL = get_queueURL()
+    # Start a subsegment for function: get_queuename 
+    subsegment = xray_recorder.begin_subsegment('function: get_queuename')
+    subsegment.put_annotation("Subsegment_Developer", "Adrian")
+    QUEUEURL = get_queuename()
+    # QUEUEURL = "https://sqs.us-west-2.amazonaws.com/696965430582/Amazon-S3-Bucket-Load-Test-EcsTaskSqsQueue-1HTOHJVBT359V"
+    subsegment.put_metadata("QUEUEURL", QUEUEURL)
+    xray_recorder.end_subsegment()
     
     sqs_client = boto3.client('sqs')
     s3_client = boto3.client('s3')
 
     start_downloads(QUEUEURL, sqs_client, s3_client)
+
+    # Close the segment
+    xray_recorder.end_segment()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
