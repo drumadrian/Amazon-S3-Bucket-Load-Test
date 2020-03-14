@@ -28,7 +28,7 @@ xray_recorder.configure(
 # patch_all()
 # https://docs.aws.amazon.com/xray/latest/devguide/xray-guide.pdf
 
-OBJECTS_PER_CONTAINER = 3600
+OBJECTS_PER_CONTAINER = "∞"
 
 def get_queuename():
     bytes_response = dns.resolver.query("filesqueue.loadtest.com","TXT").response.answer[0][-1].strings[0]
@@ -84,8 +84,8 @@ def enqueue_object(bucketname, s3_file_name, queueURL, sqs_client):
 
 def start_uploads(bucketname, queueURL, sqs_client):
     var=0
-    for var in range(OBJECTS_PER_CONTAINER):
-    # while True:
+    # for var in range(OBJECTS_PER_CONTAINER):
+    while True:
 
         now = datetime.now() # current date and time
         print("\n Time now: " + now.strftime("%H:%M:%S.%f"))
