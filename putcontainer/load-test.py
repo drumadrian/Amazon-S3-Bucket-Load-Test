@@ -28,7 +28,7 @@ xray_recorder.configure(
 # patch_all()
 # https://docs.aws.amazon.com/xray/latest/devguide/xray-guide.pdf
 
-OBJECTS_PER_CONTAINER = 10
+OBJECTS_PER_CONTAINER = 3600
 
 def get_queuename():
     bytes_response = dns.resolver.query("filesqueue.loadtest.com","TXT").response.answer[0][-1].strings[0]
