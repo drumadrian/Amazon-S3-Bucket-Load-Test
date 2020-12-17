@@ -1,1 +1,8 @@
 .DS_Store
+env.list
+getcontainer/gettest.py
+putcontainer/sqstest.py
+putcontainer/test.py
+xraycontainer/cfg.yaml
+xraycontainer/xray_mac
+Amazon-S3-Bucket-Load-Test.code-workspace
