@@ -71,7 +71,7 @@ class CdkStack(core.Stack):
         # AWS SECRETS MANAGER - Templated secret 
         ###########################################################################
         templated_secret = aws_secretsmanager.Secret(self, "TemplatedSecret",
-            description="Credentials and settings for configuration"
+            description="Credentials and settings for configuration",
             generate_secret_string=aws_secretsmanager.SecretStringGenerator(
                 secret_string_template= "{\"username\":\"cleanbox\"}",
                 generate_string_key="password"
