@@ -3,7 +3,7 @@ import aws_cdk.aws_secretsmanager as aws_secretsmanager
 # import aws_cdk.aws_cloudformation as aws_cloudformation
 # import aws_cdk.aws_lambda as aws_lambda
 # from aws_cdk.core import CustomResource
-# import aws_cdk.aws_iam as aws_iam
+import aws_cdk.aws_iam as aws_iam
 # import aws_cdk.aws_s3_notifications as aws_s3_notifications
 import aws_cdk.aws_s3 as aws_s3
 # import aws_cdk.aws_sns as aws_sns
@@ -13,10 +13,11 @@ import aws_cdk.aws_elasticsearch as aws_elasticsearch
 # import aws_cdk.aws_cognito as aws_cognito
 # import aws_cdk.aws_elasticloadbalancingv2 as aws_elasticloadbalancingv2
 # import aws_cdk.aws_ec2 as aws_ec2
+import aws_cdk.aws_ecr as aws_ecr
 # import aws_cdk.aws_cloudtrail as aws_cloudtrail
 # import inspect as inspect
 
-from aws_cdk import (core, aws_ec2 as ec2, aws_ecs as ecs, aws_ecs_patterns as ecs_patterns)
+from aws_cdk import (core, aws_ec2 as ec2, aws_ecs as aws_ecs, aws_ecs_patterns as ecs_patterns)
 import aws_cdk.aws_sqs as aws_sqs
 
 
@@ -40,16 +41,65 @@ class CdkStack(core.Stack):
 
 
         ###########################################################################
-        # AMAZON ECS CLUSTER 
+        # AMAZON ECS Repositories  
         ###########################################################################
-        cluster = ecs.Cluster(self, "LoadTestCluster", vpc=vpc)
-        task_image = ecs.ContainerImage.from_registry("amazon/amazon-ecs-sample")
-        ecs_patterns.QueueProcessingFargateService(self, "MyFargateService",
-            cluster=cluster,            # Required
-            cpu=512,                    # Default is 256
-            desired_task_count=1,            # Default is 1
-            image=task_image,
-            memory_limit_mib=2048)      # Default is 512
+        # get_repository = aws_ecs.IRepository(self, "get_repository", image_scan_on_push=True, removal_policy=aws_cdk.core.RemovalPolicy("DESTROY") )
+        # put_repository = aws_ecs.IRepository(self, "put_repository", image_scan_on_push=True, removal_policy=aws_cdk.core.RemovalPolicy("DESTROY") )
+        get_repository = aws_ecr.Repository(self, "get_repository", image_scan_on_push=True, removal_policy=core.RemovalPolicy("DESTROY") )
+        put_repository = aws_ecr.Repository(self, "put_repository", image_scan_on_push=True, removal_policy=core.RemovalPolicy("DESTROY") )
+
+
+        ###########################################################################
+        # AMAZON ECS Roles and Policies
+        ###########################################################################        
+        this_aws_account = aws_iam.AccountRootPrincipal()
+        task_policy_statement = aws_iam.PolicyStatement(
+            # principals=[this_aws_account],
+            effect=aws_iam.Effect.ALLOW,
+            actions=["s3:*", "sqs:*"],
+            resources=["*"]
+            )
+
+        task_policy_document = aws_iam.PolicyDocument()
+        task_policy_document.add_statements(task_policy_statement)
+
+        task_policy = aws_iam.Policy(self, "task_policy", document=task_policy_document)
+        
+        task_role = aws_iam.Role(self, "task_role", assumed_by=aws_iam.ServicePrincipal('ecs.amazonaws.com') )
+        task_role.attach_inline_policy(task_policy)
+
+        ###########################################################################
+        # AMAZON ECS Task definitions
+        ###########################################################################
+        get_repository_task_definition = aws_ecs.TaskDefinition(self, "get_repository_task_definition",
+                                                                        compatibility=aws_ecs.Compatibility("EC2_AND_FARGATE"), 
+                                                                        cpu="1024", 
+                                                                        ipc_mode=None, 
+                                                                        memory_mib="1024", 
+                                                                        network_mode=aws_ecs.NetworkMode("AWS_VPC"), 
+                                                                        pid_mode=None,                                      #Not supported in Fargate and Windows containers
+                                                                        placement_constraints=None, 
+                                                                        execution_role=None, 
+                                                                        family=None, 
+                                                                        proxy_configuration=None, 
+                                                                        task_role=task_role, 
+                                                                        volumes=None
+                                                                        )
+
+        put_repository_task_definition = aws_ecs.TaskDefinition(self, "put_repository_task_definition",
+                                                                        compatibility=aws_ecs.Compatibility("EC2_AND_FARGATE"), 
+                                                                        cpu="1024", 
+                                                                        ipc_mode=None, 
+                                                                        memory_mib="1024", 
+                                                                        network_mode=aws_ecs.NetworkMode("AWS_VPC"), 
+                                                                        pid_mode=None,                                      #Not supported in Fargate and Windows containers
+                                                                        placement_constraints=None, 
+                                                                        execution_role=None, 
+                                                                        family=None, 
+                                                                        proxy_configuration=None, 
+                                                                        task_role=task_role, 
+                                                                        volumes=None
+                                                                        )
 
 
         ###########################################################################
@@ -57,6 +107,41 @@ class CdkStack(core.Stack):
         ###########################################################################
         storage_bucket = aws_s3.Bucket(self, "storage_bucket")
         # cloudtrail_log_bucket = aws_s3.Bucket(self, "cloudtrail_log_bucket")
+
+
+        ###########################################################################
+        # AMAZON ECS Images 
+        ###########################################################################
+        get_repository_ecr_image = aws_ecs.EcrImage(repository=get_repository, tag="latest")
+        put_repository_ecr_image = aws_ecs.EcrImage(repository=put_repository, tag="latest")
+        environment_variables = {}
+        environment_variables["SQS_QUEUE"] = "sql_queue_var"
+        environment_variables["S3_BUCKET"] = storage_bucket.bucket_name
+
+        get_repository_task_definition.add_container("get_repository_task_definition.add_container", 
+                                                    image=get_repository_ecr_image, 
+                                                    memory_reservation_mib=1024,
+                                                    environment=environment_variables,
+                                                    )
+
+        put_repository_task_definition.add_container("put_repository_task_definition.add_container", 
+                                                    image=put_repository_ecr_image, 
+                                                    memory_reservation_mib=1024,
+                                                    environment=environment_variables,
+                                                    )
+
+
+        ###########################################################################
+        # AMAZON ECS CLUSTER 
+        ###########################################################################
+        cluster = aws_ecs.Cluster(self, "LoadTestCluster", vpc=vpc)
+        # task_image = ecs.ContainerImage.from_registry("amazon/amazon-ecs-sample")
+        # ecs_patterns.QueueProcessingFargateService(self, "MyFargateService",
+        #     cluster=cluster,            # Required
+        #     cpu=512,                    # Default is 256
+        #     desired_task_count=1,            # Default is 1
+        #     image=task_image,
+        #     memory_limit_mib=2048)      # Default is 512
 
 
         ###########################################################################
