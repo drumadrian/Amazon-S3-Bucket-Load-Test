@@ -71,7 +71,7 @@ class CdkStack(core.Stack):
         ###########################################################################
         # AMAZON ECS Task definitions
         ###########################################################################
-        get_repository_task_definition = aws_ecs.TaskDefinition(self, "get-repository-task-definition",
+        get_repository_task_definition = aws_ecs.TaskDefinition(self, "gettaskdefinition",
                                                                         compatibility=aws_ecs.Compatibility("EC2_AND_FARGATE"), 
                                                                         cpu="1024", 
                                                                         ipc_mode=None, 
@@ -86,7 +86,7 @@ class CdkStack(core.Stack):
                                                                         volumes=None
                                                                         )
 
-        put_repository_task_definition = aws_ecs.TaskDefinition(self, "put-repository-task-definition",
+        put_repository_task_definition = aws_ecs.TaskDefinition(self, "puttaskdefinition",
                                                                         compatibility=aws_ecs.Compatibility("EC2_AND_FARGATE"), 
                                                                         cpu="1024", 
                                                                         ipc_mode=None, 
