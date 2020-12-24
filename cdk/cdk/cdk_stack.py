@@ -133,13 +133,13 @@ class CdkStack(core.Stack):
         environment_variables["SQS_QUEUE"] = ecs_task_queue_queue.queue_url
         environment_variables["S3_BUCKET"] = storage_bucket.bucket_name
         
-        get_repository_task_definition.add_container("get_repository_task_definition.add_container", 
+        get_repository_task_definition.add_container("get_repository_task_definition_add_container", 
                                                     image=get_repository_ecr_image, 
                                                     memory_reservation_mib=1024,
                                                     environment=environment_variables,
                                                     )
 
-        put_repository_task_definition.add_container("put_repository_task_definition.add_container", 
+        put_repository_task_definition.add_container("put_repository_task_definition_add_container", 
                                                     image=put_repository_ecr_image, 
                                                     memory_reservation_mib=1024,
                                                     environment=environment_variables,
