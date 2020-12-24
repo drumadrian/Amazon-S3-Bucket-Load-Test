@@ -52,20 +52,26 @@ class CdkStack(core.Stack):
         ###########################################################################
         # AMAZON ECS Roles and Policies
         ###########################################################################        
-        this_aws_account = aws_iam.AccountRootPrincipal()
-        task_policy_statement = aws_iam.PolicyStatement(
-            # principals=[this_aws_account],
+        task_execution_policy_statement = aws_iam.PolicyStatement(
             effect=aws_iam.Effect.ALLOW,
-            actions=["s3:*", "sqs:*"],
+            actions=["logs:*", "ecs:*", "ec2:*", "elasticloadbalancing:*","ecr:*"],
             resources=["*"]
             )
+        task_execution_policy_document = aws_iam.PolicyDocument()
+        task_execution_policy_document.add_statements(task_execution_policy_statement)
+        task_execution_policy = aws_iam.Policy(self, "task_execution_policy", document=task_execution_policy_document)
+        task_execution_role = aws_iam.Role(self, "task_execution_role", assumed_by=aws_iam.ServicePrincipal('ecs.amazonaws.com') )
+        task_execution_role.attach_inline_policy(task_execution_policy)
 
+        task_policy_statement = aws_iam.PolicyStatement(
+            effect=aws_iam.Effect.ALLOW,
+            actions=["logs:*", "sqs:*", "s3:*"],
+            resources=["*"]
+            )
         task_policy_document = aws_iam.PolicyDocument()
         task_policy_document.add_statements(task_policy_statement)
-
         task_policy = aws_iam.Policy(self, "task_policy", document=task_policy_document)
-        
-        task_role = aws_iam.Role(self, "task_role", assumed_by=aws_iam.ServicePrincipal('ecs.amazonaws.com') )
+        task_role = aws_iam.Role(self, "task_role", assumed_by=aws_iam.ServicePrincipal('ecs-tasks.amazonaws.com') )
         task_role.attach_inline_policy(task_policy)
 
         ###########################################################################
@@ -74,31 +80,31 @@ class CdkStack(core.Stack):
         get_repository_task_definition = aws_ecs.TaskDefinition(self, "gettaskdefinition",
                                                                         compatibility=aws_ecs.Compatibility("EC2_AND_FARGATE"), 
                                                                         cpu="1024", 
-                                                                        ipc_mode=None, 
+                                                                        # ipc_mode=None, 
                                                                         memory_mib="1024", 
                                                                         network_mode=aws_ecs.NetworkMode("AWS_VPC"), 
-                                                                        pid_mode=None,                                      #Not supported in Fargate and Windows containers
-                                                                        placement_constraints=None, 
-                                                                        execution_role=None, 
-                                                                        family=None, 
-                                                                        proxy_configuration=None, 
-                                                                        task_role=task_role, 
-                                                                        volumes=None
+                                                                        # pid_mode=None,                                      #Not supported in Fargate and Windows containers
+                                                                        # placement_constraints=None, 
+                                                                        execution_role=task_execution_role, 
+                                                                        # family=None, 
+                                                                        # proxy_configuration=None, 
+                                                                        task_role=task_role
+                                                                        # volumes=None
                                                                         )
 
         put_repository_task_definition = aws_ecs.TaskDefinition(self, "puttaskdefinition",
                                                                         compatibility=aws_ecs.Compatibility("EC2_AND_FARGATE"), 
                                                                         cpu="1024", 
-                                                                        ipc_mode=None, 
+                                                                        # ipc_mode=None, 
                                                                         memory_mib="1024", 
                                                                         network_mode=aws_ecs.NetworkMode("AWS_VPC"), 
-                                                                        pid_mode=None,                                      #Not supported in Fargate and Windows containers
-                                                                        placement_constraints=None, 
-                                                                        execution_role=None, 
-                                                                        family=None, 
-                                                                        proxy_configuration=None, 
-                                                                        task_role=task_role, 
-                                                                        volumes=None
+                                                                        # pid_mode=None,                                      #Not supported in Fargate and Windows containers
+                                                                        # placement_constraints=None, 
+                                                                        execution_role=task_execution_role, 
+                                                                        # family=None, 
+                                                                        # proxy_configuration=None, 
+                                                                        task_role=task_role
+                                                                        # volumes=None
                                                                         )
 
 
