@@ -71,7 +71,7 @@ class CdkStack(core.Stack):
         ###########################################################################
         # AMAZON ECS Task definitions
         ###########################################################################
-        get_repository_task_definition = aws_ecs.TaskDefinition(self, "get_repository_task_definition",
+        get_repository_task_definition = aws_ecs.TaskDefinition(self, "get-repository-task-definition",
                                                                         compatibility=aws_ecs.Compatibility("EC2_AND_FARGATE"), 
                                                                         cpu="1024", 
                                                                         ipc_mode=None, 
@@ -86,7 +86,7 @@ class CdkStack(core.Stack):
                                                                         volumes=None
                                                                         )
 
-        put_repository_task_definition = aws_ecs.TaskDefinition(self, "put_repository_task_definition",
+        put_repository_task_definition = aws_ecs.TaskDefinition(self, "put-repository-task-definition",
                                                                         compatibility=aws_ecs.Compatibility("EC2_AND_FARGATE"), 
                                                                         cpu="1024", 
                                                                         ipc_mode=None, 
@@ -110,14 +110,22 @@ class CdkStack(core.Stack):
 
 
         ###########################################################################
+        # AWS SQS QUEUES
+        ###########################################################################
+        ecs_task_queue_iqueue = aws_sqs.Queue(self, "ecs_task_queue_iqueue_dlq")
+        ecs_task_queue_queue_dlq = aws_sqs.DeadLetterQueue(max_receive_count=10, queue=ecs_task_queue_iqueue)
+        ecs_task_queue_queue = aws_sqs.Queue(self, "ecs_task_queue_queue", visibility_timeout=core.Duration.seconds(300), dead_letter_queue=ecs_task_queue_queue_dlq)
+
+
+        ###########################################################################
         # AMAZON ECS Images 
         ###########################################################################
         get_repository_ecr_image = aws_ecs.EcrImage(repository=get_repository, tag="latest")
         put_repository_ecr_image = aws_ecs.EcrImage(repository=put_repository, tag="latest")
         environment_variables = {}
-        environment_variables["SQS_QUEUE"] = "sql_queue_var"
+        environment_variables["SQS_QUEUE"] = ecs_task_queue_queue.queue_url
         environment_variables["S3_BUCKET"] = storage_bucket.bucket_name
-
+        
         get_repository_task_definition.add_container("get_repository_task_definition.add_container", 
                                                     image=get_repository_ecr_image, 
                                                     memory_reservation_mib=1024,
@@ -142,14 +150,6 @@ class CdkStack(core.Stack):
         #     desired_task_count=1,            # Default is 1
         #     image=task_image,
         #     memory_limit_mib=2048)      # Default is 512
-
-
-        ###########################################################################
-        # AWS SQS QUEUES
-        ###########################################################################
-        ecs_task_queue_iqueue = aws_sqs.Queue(self, "ecs_task_queue_iqueue_dlq")
-        ecs_task_queue_queue_dlq = aws_sqs.DeadLetterQueue(max_receive_count=10, queue=ecs_task_queue_iqueue)
-        ecs_task_queue_queue = aws_sqs.Queue(self, "ecs_task_queue_queue", visibility_timeout=core.Duration.seconds(300), dead_letter_queue=ecs_task_queue_queue_dlq)
 
 
         ###########################################################################
