@@ -78,35 +78,35 @@ class CdkStack(core.Stack):
         ###########################################################################
         # AMAZON ECS Task definitions
         ###########################################################################
-        # get_repository_task_definition = aws_ecs.TaskDefinition(self, "gettaskdefinition",
-        #                                                                 compatibility=aws_ecs.Compatibility("EC2_AND_FARGATE"), 
-        #                                                                 cpu="1024", 
-        #                                                                 # ipc_mode=None, 
-        #                                                                 memory_mib="1024", 
-        #                                                                 network_mode=aws_ecs.NetworkMode("AWS_VPC"), 
-        #                                                                 # pid_mode=None,                                      #Not supported in Fargate and Windows containers
-        #                                                                 # placement_constraints=None, 
-        #                                                                 execution_role=task_execution_role, 
-        #                                                                 # family=None, 
-        #                                                                 # proxy_configuration=None, 
-        #                                                                 task_role=task_role
-        #                                                                 # volumes=None
-        #                                                                 )
+        get_repository_task_definition = aws_ecs.TaskDefinition(self, "gettaskdefinition",
+                                                                        compatibility=aws_ecs.Compatibility("EC2_AND_FARGATE"), 
+                                                                        cpu="1024", 
+                                                                        # ipc_mode=None, 
+                                                                        memory_mib="1024", 
+                                                                        network_mode=aws_ecs.NetworkMode("AWS_VPC"), 
+                                                                        # pid_mode=None,                                      #Not supported in Fargate and Windows containers
+                                                                        # placement_constraints=None, 
+                                                                        execution_role=task_execution_role, 
+                                                                        # family=None, 
+                                                                        # proxy_configuration=None, 
+                                                                        task_role=task_role
+                                                                        # volumes=None
+                                                                        )
 
-        # put_repository_task_definition = aws_ecs.TaskDefinition(self, "puttaskdefinition",
-        #                                                                 compatibility=aws_ecs.Compatibility("EC2_AND_FARGATE"), 
-        #                                                                 cpu="1024", 
-        #                                                                 # ipc_mode=None, 
-        #                                                                 memory_mib="1024", 
-        #                                                                 network_mode=aws_ecs.NetworkMode("AWS_VPC"), 
-        #                                                                 # pid_mode=None,                                      #Not supported in Fargate and Windows containers
-        #                                                                 # placement_constraints=None, 
-        #                                                                 execution_role=task_execution_role, 
-        #                                                                 # family=None, 
-        #                                                                 # proxy_configuration=None, 
-        #                                                                 task_role=task_role
-        #                                                                 # volumes=None
-        #                                                                 )
+        put_repository_task_definition = aws_ecs.TaskDefinition(self, "puttaskdefinition",
+                                                                        compatibility=aws_ecs.Compatibility("EC2_AND_FARGATE"), 
+                                                                        cpu="1024", 
+                                                                        # ipc_mode=None, 
+                                                                        memory_mib="1024", 
+                                                                        network_mode=aws_ecs.NetworkMode("AWS_VPC"), 
+                                                                        # pid_mode=None,                                      #Not supported in Fargate and Windows containers
+                                                                        # placement_constraints=None, 
+                                                                        execution_role=task_execution_role, 
+                                                                        # family=None, 
+                                                                        # proxy_configuration=None, 
+                                                                        task_role=task_role
+                                                                        # volumes=None
+                                                                        )
 
 
         ###########################################################################
@@ -133,17 +133,17 @@ class CdkStack(core.Stack):
         environment_variables["SQS_QUEUE"] = ecs_task_queue_queue.queue_url
         environment_variables["S3_BUCKET"] = storage_bucket.bucket_name
         
-        # get_repository_task_definition.add_container("get_repository_task_definition.add_container", 
-        #                                             image=get_repository_ecr_image, 
-        #                                             memory_reservation_mib=1024,
-        #                                             environment=environment_variables,
-        #                                             )
+        get_repository_task_definition.add_container("get_repository_task_definition.add_container", 
+                                                    image=get_repository_ecr_image, 
+                                                    memory_reservation_mib=1024,
+                                                    environment=environment_variables,
+                                                    )
 
-        # put_repository_task_definition.add_container("put_repository_task_definition.add_container", 
-        #                                             image=put_repository_ecr_image, 
-        #                                             memory_reservation_mib=1024,
-        #                                             environment=environment_variables,
-        #                                             )
+        put_repository_task_definition.add_container("put_repository_task_definition.add_container", 
+                                                    image=put_repository_ecr_image, 
+                                                    memory_reservation_mib=1024,
+                                                    environment=environment_variables,
+                                                    )
 
 
         ###########################################################################
