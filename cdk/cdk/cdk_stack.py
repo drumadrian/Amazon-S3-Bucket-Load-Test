@@ -82,7 +82,7 @@ class CdkStack(core.Stack):
                                                                         compatibility=aws_ecs.Compatibility("FARGATE"), 
                                                                         cpu="1024", 
                                                                         # ipc_mode=None, 
-                                                                        memory_mib="1024", 
+                                                                        memory_mib="2048", 
                                                                         network_mode=aws_ecs.NetworkMode("AWS_VPC"), 
                                                                         # pid_mode=None,                                      #Not supported in Fargate and Windows containers
                                                                         # placement_constraints=None, 
@@ -97,7 +97,7 @@ class CdkStack(core.Stack):
                                                                         compatibility=aws_ecs.Compatibility("FARGATE"), 
                                                                         cpu="1024", 
                                                                         # ipc_mode=None, 
-                                                                        memory_mib="1024", 
+                                                                        memory_mib="2048", 
                                                                         network_mode=aws_ecs.NetworkMode("AWS_VPC"), 
                                                                         # pid_mode=None,                                      #Not supported in Fargate and Windows containers
                                                                         # placement_constraints=None, 
