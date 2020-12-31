@@ -2,82 +2,91 @@
 
 Purpose: Create and Put files into a single S3 bucket as fast as possible. 
 
-
-
-
 ![MacDown logo](S3_Load_Test_Diagram.png)
-
-
 
 ## Summary
 
 The goal is to create as many files as specified, then copy them into Amazon S3 using a python script running in a Fargate Task. 
 
 
-
-
 Steps: 
 
 These steps are guidance and can be executed out of order by an experienced operator:
 
-* Create a container using the included script
-* Create an Amazon S3 bucket
-	* Put a lifecycle policy to delete objects on bucket
-* Create a Fargate Application and Task using your Image
+* Bootstrap your AWS Account for the CDK
+* Deploy the cdk stack using `cdk deploy` 
+* Create the containers needed using the included Dockerfiles
+* Push the containers to the matching ECR repo
 * Put the bucket name of the newly created bucket in a DNS TXT entry
 * Deploy the Fargate application and monitor X-Ray, CloudWatch metrics, and CloudWatch logs
 
-
-
-
-
-
 </br>
-
 
 
 ### Commands to Build container zip file: 
 ###### (to be uploaed to S3 for container build pipeline):
 
 ```
-rm xraycontainer.zip
 
-zip -r xraycontainer.zip ./xraycontainer 
+GET_REPOSITORY_NAME=getrepositorya5f65c8e-opes9uqkcxi1
+GET_REPOSITORY_URI=696965430582.dkr.ecr.us-west-2.amazonaws.com/getrepositorya5f65c8e-opes9uqkcxi1
+AWS_REGION=us-west-2
 
-rm putcontainer.zip
+echo $GET_REPOSITORY_NAME
+echo $GET_REPOSITORY_URI
+echo $AWS_REGION
 
-zip -r putcontainer.zip ./putcontainer 
-
-rm getcontainer.zip
-
-zip -r getcontainer.zip ./getcontainer 
-
-aws s3 cp putcontainer.zip s3://<your_bucket_name>/putcontainer.zip
-   
-aws s3 cp getcontainer.zip s3://<your_bucket_name>/getcontainer.zip
+$(aws ecr get-login --region $(AWS_REGION) --no-include-email)
+cd getcontainer
+docker build -t $GET_REPOSITORY_NAME:latest .
+docker tag $GET_REPOSITORY_NAME:latest $GET_REPOSITORY_URI:latest
+docker push $GET_REPOSITORY_URI:latest
+cd ..
 
 
-   Example for bucket name: amazon-s3-bucket-load-test-containerbucket-j2tlym7zxz5s
 
-rm xraycontainer.zip
-zip -r xraycontainer.zip ./xraycontainer 
-rm putcontainer.zip
-zip -r putcontainer.zip ./putcontainer 
-rm getcontainer.zip
-zip -r getcontainer.zip ./getcontainer 
+PUT_REPOSITORY_NAME=putrepositoryadbc1150-wtujtmuva7bf
+PUT_REPOSITORY_URI=696965430582.dkr.ecr.us-west-2.amazonaws.com/putrepositoryadbc1150-wtujtmuva7bf
+AWS_REGION=us-west-2
 
-aws s3 cp putcontainer.zip s3://amazon-s3-bucket-load-test-containerbucket-j2tlym7zxz5s/putcontainer.zip
-aws s3 cp getcontainer.zip s3://amazon-s3-bucket-load-test-containerbucket-j2tlym7zxz5s/getcontainer.zip
-aws s3 cp xraycontainer.zip s3://amazon-s3-bucket-load-test-containerbucket-j2tlym7zxz5s/xraycontainer.zip
+echo $PUT_REPOSITORY_NAME
+echo $PUT_REPOSITORY_URI
+echo $AWS_REGION
+
+$(aws ecr get-login --region $(AWS_REGION) --no-include-email)
+cd putcontainer
+docker build -t $PUT_REPOSITORY_NAME:latest .
+docker tag $PUT_REPOSITORY_NAME:latest $PUT_REPOSITORY_URI:latest
+docker push $PUT_REPOSITORY_URI:latest
+cd ..
+
+
+
+
+XRAY_REPOSITORY_NAME=xrayrepository855dc8d2-fy0wax3vgbhl
+XRAY_REPOSITORY_URI=696965430582.dkr.ecr.us-west-2.amazonaws.com/xrayrepository855dc8d2-fy0wax3vgbhl
+AWS_REGION=us-west-2
+
+echo $XRAY_REPOSITORY_NAME
+echo $XRAY_REPOSITORY_URI
+echo $AWS_REGION
+
+$(aws ecr get-login --region $(AWS_REGION) --no-include-email)
+cd xraycontainer
+docker build -t $XRAY_REPOSITORY_NAME:latest .
+docker tag $XRAY_REPOSITORY_NAME:latest $XRAY_REPOSITORY_URI:latest
+docker push $XRAY_REPOSITORY_URI:latest
+
+
+
 
 ```
 
 ### CLI Commands to Deploy Solution: 
 
 ```
-sam validate
-sam build 
-sam deploy --guided
+cdk bootstrap
+cdk deploy
 ```
 
 
@@ -93,7 +102,6 @@ https://stackoverflow.com/questions/10607688/how-to-create-a-file-name-with-the-
 https://stackoverflow.com/questions/14275975/creating-random-binary-files
 
 http://ls.pwd.io/2013/06/parallel-s3-uploads-using-boto-and-threads-in-python/
-
 
 https://docs.aws.amazon.com/AmazonS3/latest/user-guide/empty-bucket.html
 

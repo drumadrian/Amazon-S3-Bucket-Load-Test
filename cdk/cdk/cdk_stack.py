@@ -16,6 +16,7 @@ import aws_cdk.aws_elasticsearch as aws_elasticsearch
 import aws_cdk.aws_ecr as aws_ecr
 # import aws_cdk.aws_cloudtrail as aws_cloudtrail
 # import inspect as inspect
+import aws_cdk.aws_route53 as aws_route53
 
 from aws_cdk import (core, aws_ec2 as ec2, aws_ecs as aws_ecs, aws_ecs_patterns as ecs_patterns)
 import aws_cdk.aws_sqs as aws_sqs
@@ -224,6 +225,16 @@ class CdkStack(core.Stack):
 
 
 
+
+        ###########################################################################
+        # AWS ROUTE53 HOSTED ZONE 
+        ###########################################################################
+        hosted_zone = aws_route53.HostedZone(self, "hosted_zone", zone_name="loadtest.com" ,comment="private hosted zone for loadtest system")
+        hosted_zone.add_vpc(vpc)
+        bucket_record_values = [storage_bucket.bucket_name]
+        queue_record_values = [ecs_task_queue_queue.queue_url]
+        hosted_zone_record_bucket = aws_route53.TxtRecord(self, "hosted_zone_record_bucket", values=bucket_record_values, zone=hosted_zone, comment="dns record for bucket name")
+        hosted_zone_record_queue = aws_route53.TxtRecord(self, "hosted_zone_record_queue", values=queue_record_values, zone=hosted_zone, comment="dns record for queue name")
 
 
 
