@@ -149,26 +149,26 @@ class CdkStack(core.Stack):
         xray_task_log_driver = aws_ecs.LogDriver.aws_logs(stream_prefix="S3LoadTest", log_retention=aws_logs.RetentionDays("ONE_WEEK"))
 
 
-        get_task_definition.add_container("get_task_definition1", 
+        get_task_definition.add_container("get_task_definition_get", 
                                                     image=get_repository_ecr_image, 
                                                     memory_reservation_mib=1024,
                                                     environment=environment_variables,
                                                     logging=get_task_log_driver
                                                     )
-        get_task_definition.add_container("get_task_definition2", 
+        get_task_definition.add_container("get_task_definition_xray", 
                                                     image=xray_repository_ecr_image, 
                                                     memory_reservation_mib=1024,
                                                     environment=environment_variables,
                                                     logging=xray_task_log_driver
                                                     )
 
-        put_task_definition.add_container("put_task_definition1", 
+        put_task_definition.add_container("put_task_definition_put", 
                                                     image=put_repository_ecr_image, 
                                                     memory_reservation_mib=1024,
                                                     environment=environment_variables,
                                                     logging=put_task_log_driver
                                                     )
-        put_task_definition.add_container("put_task_definition2", 
+        put_task_definition.add_container("put_task_definition_xray", 
                                                     image=xray_repository_ecr_image, 
                                                     memory_reservation_mib=1024,
                                                     environment=environment_variables,
@@ -251,7 +251,7 @@ class CdkStack(core.Stack):
         bucket_record_values = [storage_bucket.bucket_name]
         queue_record_values = [ecs_task_queue_queue.queue_url]
         bucket_record_name = "bucket." + hosted_zone.zone_name
-        queue_record_name = "queue." + hosted_zone.zone_name
+        queue_record_name = "filesqueue." + hosted_zone.zone_name
         hosted_zone_record_bucket = aws_route53.TxtRecord(self, "hosted_zone_record_bucket", record_name=bucket_record_name, values=bucket_record_values, zone=hosted_zone, comment="dns record for bucket name")
         hosted_zone_record_queue = aws_route53.TxtRecord(self, "hosted_zone_record_queue", record_name=queue_record_name, values=queue_record_values, zone=hosted_zone, comment="dns record for queue name")
 
