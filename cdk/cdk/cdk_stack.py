@@ -149,26 +149,26 @@ class CdkStack(core.Stack):
         xray_task_log_driver = aws_ecs.LogDriver.aws_logs(stream_prefix="S3LoadTest", log_retention=aws_logs.RetentionDays("ONE_WEEK"))
 
 
-        get_task_definition.add_container("get_task_definition.add_container", 
+        get_task_definition.add_container("get_task_definition1", 
                                                     image=get_repository_ecr_image, 
                                                     memory_reservation_mib=1024,
                                                     environment=environment_variables,
                                                     logging=get_task_log_driver
                                                     )
-        get_task_definition.add_container("get_task_definition.add_container2", 
+        get_task_definition.add_container("get_task_definition2", 
                                                     image=xray_repository_ecr_image, 
                                                     memory_reservation_mib=1024,
                                                     environment=environment_variables,
                                                     logging=xray_task_log_driver
                                                     )
 
-        put_task_definition.add_container("put_task_definition.add_container", 
+        put_task_definition.add_container("put_task_definition1", 
                                                     image=put_repository_ecr_image, 
                                                     memory_reservation_mib=1024,
                                                     environment=environment_variables,
                                                     logging=put_task_log_driver
                                                     )
-        put_task_definition.add_container("put_task_definition.add_container2", 
+        put_task_definition.add_container("put_task_definition2", 
                                                     image=xray_repository_ecr_image, 
                                                     memory_reservation_mib=1024,
                                                     environment=environment_variables,
