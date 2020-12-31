@@ -62,7 +62,7 @@ class CdkStack(core.Stack):
         task_execution_policy_document = aws_iam.PolicyDocument()
         task_execution_policy_document.add_statements(task_execution_policy_statement)
         task_execution_policy = aws_iam.Policy(self, "task_execution_policy", document=task_execution_policy_document)
-        task_execution_role = aws_iam.Role(self, "task_execution_role", assumed_by=aws_iam.ServicePrincipal('ecs.amazonaws.com') )
+        task_execution_role = aws_iam.Role(self, "task_execution_role", assumed_by=aws_iam.ServicePrincipal('ecs-tasks.amazonaws.com') )
         task_execution_role.attach_inline_policy(task_execution_policy)
 
         task_policy_statement = aws_iam.PolicyStatement(
