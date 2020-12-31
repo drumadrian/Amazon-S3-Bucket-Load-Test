@@ -47,6 +47,7 @@ class CdkStack(core.Stack):
         # put_repository = aws_ecs.IRepository(self, "put_repository", image_scan_on_push=True, removal_policy=aws_cdk.core.RemovalPolicy("DESTROY") )
         get_repository = aws_ecr.Repository(self, "get_repository", image_scan_on_push=True, removal_policy=core.RemovalPolicy("DESTROY") )
         put_repository = aws_ecr.Repository(self, "put_repository", image_scan_on_push=True, removal_policy=core.RemovalPolicy("DESTROY") )
+        xray_repository = aws_ecr.Repository(self, "xray_repository", image_scan_on_push=True, removal_policy=core.RemovalPolicy("DESTROY") )
 
 
         ###########################################################################
@@ -129,6 +130,7 @@ class CdkStack(core.Stack):
         ###########################################################################
         get_repository_ecr_image = aws_ecs.EcrImage(repository=get_repository, tag="latest")
         put_repository_ecr_image = aws_ecs.EcrImage(repository=put_repository, tag="latest")
+        xray_repository_ecr_image = aws_ecs.EcrImage(repository=xray_repository, tag="latest")
         environment_variables = {}
         environment_variables["SQS_QUEUE"] = ecs_task_queue_queue.queue_url
         environment_variables["S3_BUCKET"] = storage_bucket.bucket_name
@@ -138,9 +140,19 @@ class CdkStack(core.Stack):
                                                     memory_reservation_mib=1024,
                                                     environment=environment_variables,
                                                     )
+        get_repository_task_definition.add_container("xray_repository_task_definition_add_container", 
+                                                    image=xray_repository_ecr_image, 
+                                                    memory_reservation_mib=1024,
+                                                    environment=environment_variables,
+                                                    )
 
         put_repository_task_definition.add_container("put_repository_task_definition_add_container", 
                                                     image=put_repository_ecr_image, 
+                                                    memory_reservation_mib=1024,
+                                                    environment=environment_variables,
+                                                    )
+        put_repository_task_definition.add_container("xray_repository_task_definition_add_container", 
+                                                    image=xray_repository_ecr_image, 
                                                     memory_reservation_mib=1024,
                                                     environment=environment_variables,
                                                     )
