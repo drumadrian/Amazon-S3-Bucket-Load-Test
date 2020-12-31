@@ -28,6 +28,8 @@ These steps are guidance and can be executed out of order by an experienced oper
 
 ```
 
+cd Amazon-S3-Bucket-Load-Test
+
 GET_REPOSITORY_NAME=getrepositorya5f65c8e-opes9uqkcxi1
 GET_REPOSITORY_URI=696965430582.dkr.ecr.us-west-2.amazonaws.com/getrepositorya5f65c8e-opes9uqkcxi1
 AWS_REGION=us-west-2
@@ -36,8 +38,9 @@ echo $GET_REPOSITORY_NAME
 echo $GET_REPOSITORY_URI
 echo $AWS_REGION
 
-$(aws ecr get-login --region $(AWS_REGION) --no-include-email)
+
 cd getcontainer
+aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $GET_REPOSITORY_URI
 docker build -t $GET_REPOSITORY_NAME:latest .
 docker tag $GET_REPOSITORY_NAME:latest $GET_REPOSITORY_URI:latest
 docker push $GET_REPOSITORY_URI:latest
@@ -53,8 +56,8 @@ echo $PUT_REPOSITORY_NAME
 echo $PUT_REPOSITORY_URI
 echo $AWS_REGION
 
-$(aws ecr get-login --region $(AWS_REGION) --no-include-email)
 cd putcontainer
+aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $PUT_REPOSITORY_URI
 docker build -t $PUT_REPOSITORY_NAME:latest .
 docker tag $PUT_REPOSITORY_NAME:latest $PUT_REPOSITORY_URI:latest
 docker push $PUT_REPOSITORY_URI:latest
@@ -71,11 +74,12 @@ echo $XRAY_REPOSITORY_NAME
 echo $XRAY_REPOSITORY_URI
 echo $AWS_REGION
 
-$(aws ecr get-login --region $(AWS_REGION) --no-include-email)
 cd xraycontainer
+aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $XRAY_REPOSITORY_URI
 docker build -t $XRAY_REPOSITORY_NAME:latest .
 docker tag $XRAY_REPOSITORY_NAME:latest $XRAY_REPOSITORY_URI:latest
 docker push $XRAY_REPOSITORY_URI:latest
+cd ..
 
 
 

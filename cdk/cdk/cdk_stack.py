@@ -16,6 +16,7 @@ import aws_cdk.aws_elasticsearch as aws_elasticsearch
 import aws_cdk.aws_ecr as aws_ecr
 # import aws_cdk.aws_cloudtrail as aws_cloudtrail
 # import inspect as inspect
+import aws_cdk.aws_logs as aws_logs
 import aws_cdk.aws_route53 as aws_route53
 
 from aws_cdk import (core, aws_ec2 as ec2, aws_ecs as aws_ecs, aws_ecs_patterns as ecs_patterns)
@@ -80,7 +81,7 @@ class CdkStack(core.Stack):
         ###########################################################################
         # AMAZON ECS Task definitions
         ###########################################################################
-        get_repository_task_definition = aws_ecs.TaskDefinition(self, "gettaskdefinition",
+        get_task_definition = aws_ecs.TaskDefinition(self, "gettaskdefinition",
                                                                         compatibility=aws_ecs.Compatibility("FARGATE"), 
                                                                         cpu="1024", 
                                                                         # ipc_mode=None, 
@@ -95,7 +96,7 @@ class CdkStack(core.Stack):
                                                                         # volumes=None
                                                                         )
 
-        put_repository_task_definition = aws_ecs.TaskDefinition(self, "puttaskdefinition",
+        put_task_definition = aws_ecs.TaskDefinition(self, "puttaskdefinition",
                                                                         compatibility=aws_ecs.Compatibility("FARGATE"), 
                                                                         cpu="1024", 
                                                                         # ipc_mode=None, 
@@ -136,26 +137,42 @@ class CdkStack(core.Stack):
         environment_variables["SQS_QUEUE"] = ecs_task_queue_queue.queue_url
         environment_variables["S3_BUCKET"] = storage_bucket.bucket_name
         
-        get_repository_task_definition.add_container("get_repository_task_definition_add_container", 
+        # get_task_log_driver = aws_ecs.LogDriver(self, container_definition=get_task_definition)
+        # put_task_log_driver = aws_ecs.LogDriver(self, container_definition=put_task_definition)
+        # xray_task_log_driver = aws_ecs.LogDriver(self, container_definition=xray_task_definition)
+
+        # get_task_log_driver = aws_ecs.LogDriver()
+        # put_task_log_driver = aws_ecs.LogDriver()
+        # xray_task_log_driver = aws_ecs.LogDriver()
+        get_task_log_driver = aws_ecs.LogDriver.aws_logs(stream_prefix="S3LoadTest", log_retention=aws_logs.RetentionDays("ONE_WEEK"))
+        put_task_log_driver = aws_ecs.LogDriver.aws_logs(stream_prefix="S3LoadTest", log_retention=aws_logs.RetentionDays("ONE_WEEK"))
+        xray_task_log_driver = aws_ecs.LogDriver.aws_logs(stream_prefix="S3LoadTest", log_retention=aws_logs.RetentionDays("ONE_WEEK"))
+
+
+        get_task_definition.add_container("get_task_definition.add_container", 
                                                     image=get_repository_ecr_image, 
                                                     memory_reservation_mib=1024,
                                                     environment=environment_variables,
+                                                    logging=get_task_log_driver
                                                     )
-        get_repository_task_definition.add_container("xray_repository_task_definition_add_container", 
+        get_task_definition.add_container("get_task_definition.add_container2", 
                                                     image=xray_repository_ecr_image, 
                                                     memory_reservation_mib=1024,
                                                     environment=environment_variables,
+                                                    logging=xray_task_log_driver
                                                     )
 
-        put_repository_task_definition.add_container("put_repository_task_definition_add_container", 
+        put_task_definition.add_container("put_task_definition.add_container", 
                                                     image=put_repository_ecr_image, 
                                                     memory_reservation_mib=1024,
                                                     environment=environment_variables,
+                                                    logging=put_task_log_driver
                                                     )
-        put_repository_task_definition.add_container("xray_repository_task_definition_add_container", 
+        put_task_definition.add_container("put_task_definition.add_container2", 
                                                     image=xray_repository_ecr_image, 
                                                     memory_reservation_mib=1024,
                                                     environment=environment_variables,
+                                                    logging=xray_task_log_driver
                                                     )
 
 
