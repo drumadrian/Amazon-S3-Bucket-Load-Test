@@ -234,7 +234,7 @@ class CdkStack(core.Stack):
         bucket_record_values = [storage_bucket.bucket_name]
         queue_record_values = [ecs_task_queue_queue.queue_url]
         hosted_zone_record_bucket = aws_route53.TxtRecord(self, "hosted_zone_record_bucket", values=bucket_record_values, zone=hosted_zone, comment="dns record for bucket name")
-        hosted_zone_record_queue = aws_route53.TxtRecord(self, "hosted_zone_record_queue", values=queue_record_values, zone=hosted_zone, comment="dns record for queue name")
+        # hosted_zone_record_queue = aws_route53.TxtRecord(self, "hosted_zone_record_queue", values=queue_record_values, zone=hosted_zone, comment="dns record for queue name")
 
 
 
