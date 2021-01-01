@@ -68,7 +68,7 @@ class CdkStack(core.Stack):
 
         task_policy_statement = aws_iam.PolicyStatement(
             effect=aws_iam.Effect.ALLOW,
-            actions=["logs:*", "sqs:*", "s3:*"],
+            actions=["logs:*", "xray:*", "sqs:*", "s3:*"],
             resources=["*"]
             )
         task_policy_document = aws_iam.PolicyDocument()
