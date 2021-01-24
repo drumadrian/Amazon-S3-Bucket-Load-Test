@@ -7,8 +7,10 @@ import os
 import pprint
 import json 
 import time
-import oneagent
 
+import oneagent # SDK initialization functions
+import oneagent.sdk as onesdk # All other SDK functions.
+from oneagent.common import MessagingDestinationType
 
 
 ################################################################################################################
@@ -80,6 +82,7 @@ def enqueue_object(bucketname, s3_file_name, queueURL, sqs_client):
 ################################################################################################################
 def start_uploads(bucketname, queueURL, sqs_client):
     var=0
+    OBJECTS_PER_CONTAINER = "∞"
     # for var in range(OBJECTS_PER_CONTAINER):
     while True:
 
@@ -91,20 +94,21 @@ def start_uploads(bucketname, queueURL, sqs_client):
         print("\n s3_file_name: {0}\n".format(s3_file_name))
 
         # Start a subsegment for upload_to_bucket()
-        subsegment = xray_recorder.begin_subsegment('function: upload_to_bucket')
         uploaded = upload_to_bucket('/app/diagram.png', bucketname, s3_file_name)
         # uploaded = upload_to_bucket('diagram.png', bucketname, s3_file_name)
         # Close the subsegment
-        xray_recorder.end_subsegment()
 
-        # Start a subsegment for enqueue_object()
-        subsegment = xray_recorder.begin_subsegment('function: enqueue_object')
         if uploaded:
             enqueue_object(bucketname, s3_file_name, queueURL, sqs_client)
         else:
             print("Error uploading object: {0} to bucket: {1}".format(s3_file_name, bucketname))
-        # Close the subsegment and segment
-        xray_recorder.end_subsegment()
+
+################################################################################################################
+#   Debug Dynatrace SDK errors
+################################################################################################################
+def _diag_callback(unicode_message):
+	print(unicode_message)
+
 
 
 ################################################################################################################
@@ -114,35 +118,51 @@ if __name__ == '__main__':
 
     try:
         ################################################################################################################
-        #   Global Config settings
+        #   Setup Dynatrace Tracing
         ################################################################################################################
-        OBJECTS_PER_CONTAINER = "∞"
-
-        if not oneagent.initialize():
+        init_result = oneagent.initialize()
+        # if not oneagent.initialize():
+        if not init_result:
             print('Error initializing OneAgent SDK.')
+        if init_result:
+            print('SDK should work (but agent might be inactive).')
+            print('OneAgent SDK initialization result' + repr(init_result))
+        else:
+            print('SDK will definitely not work (i.e. functions will be no-ops):', init_result)
+        sdk = oneagent.get_sdk()
+        if sdk.agent_state not in (AgentState.ACTIVE, AgentState.TEMPORARILY_INACTIVE):
+            print('Dynatrace SDK agent is NOT Active, you will not see data from this process.')
+        sdk.set_diagnostic_callback(_diag_callback)
+        print('It may take a few moments before the path appears in the UI.')
+        ################################################################################################################
 
-        with oneagent.get_sdk().trace_incoming_remote_call('method', 'service', 'endpoint'):
-            # pass
-            # my code goes here? 
+        # with oneagent.get_sdk().trace_incoming_remote_call('method', 'service', 'endpoint'):
 
-            print('It may take a few moments before the path appears in the UI.')
+        ################################################################################################################
+        # Get and Print the list of user's environment variables 
+        env_var = os.environ 
+        print("\n User's Environment variables:") 
+        pprint.pprint(dict(env_var), width = 1) 
+        ################################################################################################################
 
-            # Start a segment
-            # now = datetime.now() # current date and time
-
-            # Get and Print the list of user's environment variables 
-            env_var = os.environ 
-            print("\n User's Environment variables:") 
-            pprint.pprint(dict(env_var), width = 1) 
-
-            # Start a subsegment for function: get_queuename 
+        ################################################################################################################
+        sdk.add_custom_request_attribute('Method', 'get_queuename()')
+        sdk.add_custom_request_attribute('Container', 'Put')
+        sdk.add_custom_request_attribute('famous actor', 'Benedict Cumberbatch')
+        with sdk.trace_custom_service('get_queuename()', 'SQS'):
             QUEUEURL = get_queuename()
+        # QUEUEURL = "https://sqs.us-west-2.amazonaws.com/696965430582/S3LoadTest-ecstaskqueuequeue6E80C2CD-14EYBYEKSI2FE"
+        ################################################################################################################
 
-            # Start a subsegment for function: get_bucketname 
-            BUCKETNAME = get_bucketname()
-            
-            sqs_client = boto3.client('sqs')
-            start_uploads(BUCKETNAME, QUEUEURL, sqs_client)
+        ################################################################################################################
+        BUCKETNAME = get_bucketname()
+        # BUCKETNAME = "s3loadtest-storagebucket04df299d-6wyssbwsav39"
+         ################################################################################################################
+
+        ################################################################################################################
+        sqs_client = boto3.client('sqs')
+        start_uploads(BUCKETNAME, QUEUEURL, sqs_client)
+        ################################################################################################################
 
     finally:
         shutdown_error = oneagent.shutdown()

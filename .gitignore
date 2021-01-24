@@ -11,3 +11,4 @@ notes.sh
 cdk/.venv
 cdk/.venv/*
 cdk/cdk/template.yaml
+notes.txt
