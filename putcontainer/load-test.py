@@ -81,7 +81,7 @@ def enqueue_object(bucketname, s3_file_name, queueURL, sqs_client):
 ################################################################################################################
 #   Upload files continuously to S3
 ################################################################################################################
-def start_uploads(bucketname, queueURL, sqs_client):
+def start_uploads(bucketname, queueURL, sqs_client, sdk):
     var=0
     OBJECTS_PER_CONTAINER = "∞"
     # for var in range(OBJECTS_PER_CONTAINER):
@@ -90,17 +90,15 @@ def start_uploads(bucketname, queueURL, sqs_client):
         now = datetime.now() # current date and time
         print("\n Time now: " + now.strftime("%H:%M:%S.%f"))
 
-        # s3_file_name="diagram_" + now.strftime("%H:%M:%S.%f") + ".png"
         s3_file_name=now.strftime("%f_%H:%M:%S.%f") + "_diagram" + ".png"
         print("\n s3_file_name: {0}\n".format(s3_file_name))
 
-        # Start a subsegment for upload_to_bucket()
-        uploaded = upload_to_bucket('/app/diagram.png', bucketname, s3_file_name)
-        # uploaded = upload_to_bucket('diagram.png', bucketname, s3_file_name)
-        # Close the subsegment
+        with sdk.trace_custom_service('upload_to_bucket()', 'S3'):
+            uploaded = upload_to_bucket('/app/diagram.png', bucketname, s3_file_name)
 
         if uploaded:
-            enqueue_object(bucketname, s3_file_name, queueURL, sqs_client)
+            with sdk.trace_custom_service('upload_to_bucket()', 'S3'):
+                enqueue_object(bucketname, s3_file_name, queueURL, sqs_client)
         else:
             print("Error uploading object: {0} to bucket: {1}".format(s3_file_name, bucketname))
 
@@ -127,7 +125,7 @@ if __name__ == '__main__':
             print('Error initializing OneAgent SDK.')
         if init_result:
             print('SDK should work (but agent might be inactive).')
-            print('OneAgent SDK initialization result' + repr(init_result))
+            print('OneAgent SDK initialization result: ' + repr(init_result))
         else:
             print('SDK will definitely not work (i.e. functions will be no-ops):', init_result)
         sdk = oneagent.get_sdk()
@@ -156,13 +154,14 @@ if __name__ == '__main__':
         ################################################################################################################
 
         ################################################################################################################
-        BUCKETNAME = get_bucketname()
+        with sdk.trace_custom_service('get_bucketname()', 'DNS'):
+            BUCKETNAME = get_bucketname()
         # BUCKETNAME = "s3loadtest-storagebucket04df299d-6wyssbwsav39"
          ################################################################################################################
 
         ################################################################################################################
         sqs_client = boto3.client('sqs')
-        start_uploads(BUCKETNAME, QUEUEURL, sqs_client)
+        start_uploads(BUCKETNAME, QUEUEURL, sqs_client, sdk)
         ################################################################################################################
 
     finally:
