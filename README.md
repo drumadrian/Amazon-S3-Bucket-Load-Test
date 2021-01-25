@@ -23,60 +23,78 @@ These steps are guidance and can be executed out of order by an experienced oper
 </br>
 
 
-### Commands to Build container zip file: 
+### All environment variables for each Docker container's creation: 
 ###### (to be uploaed to S3 for container build pipeline):
+```
+cd Amazon-S3-Bucket-Load-Test
+export DT_API_URL="https://<your-environment-id>.live.dynatrace.com/api"
+export DT_API_TOKEN="<your-paas-token>"
+export AWS_REGION=us-west-2
+
+export GET_REPOSITORY_NAME=<get-repository-name>
+export GET_REPOSITORY_URI=<get-repository-uri>
+
+export PUT_REPOSITORY_NAME=<put-repository-name>
+export PUT_REPOSITORY_URI=<put-repository-uri>
+
+export XRAY_REPOSITORY_NAME=<xray-repository-name>
+export XRAY_REPOSITORY_URI=<xray-repository-uri>
+
+
+Optional: 
+echo $DT_API_URL
+echo $DT_API_TOKEN=
+echo $AWS_REGION
+echo $GET_REPOSITORY_NAME
+echo $GET_REPOSITORY_URI
+echo $PUT_REPOSITORY_NAME
+echo $PUT_REPOSITORY_URI
+echo $XRAY_REPOSITORY_NAME
+echo $XRAY_REPOSITORY_URI
 
 ```
 
-cd Amazon-S3-Bucket-Load-Test
 
-GET_REPOSITORY_NAME=getrepositorya5f65c8e-opes9uqkcxi1
-GET_REPOSITORY_URI=696965430582.dkr.ecr.us-west-2.amazonaws.com/getrepositorya5f65c8e-opes9uqkcxi1
-AWS_REGION=us-west-2
-
-echo $GET_REPOSITORY_NAME
-echo $GET_REPOSITORY_URI
-echo $AWS_REGION
-
-
+### Commands to Build GET container zip file: 
+###### (to be uploaed to S3 for container build pipeline):
+```
 cd getcontainer
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $GET_REPOSITORY_URI
-docker build -t $GET_REPOSITORY_NAME:latest .
+docker build \
+--build-arg DT_API_URL=$DT_API_URL
+--build-arg DT_API_TOKEN=$DT_API_URL
+-t $GET_REPOSITORY_NAME:latest .
 docker tag $GET_REPOSITORY_NAME:latest $GET_REPOSITORY_URI:latest
 docker push $GET_REPOSITORY_URI:latest
 cd ..
+```
 
 
-
-PUT_REPOSITORY_NAME=putrepositoryadbc1150-wtujtmuva7bf
-PUT_REPOSITORY_URI=696965430582.dkr.ecr.us-west-2.amazonaws.com/putrepositoryadbc1150-wtujtmuva7bf
-AWS_REGION=us-west-2
-
-echo $PUT_REPOSITORY_NAME
-echo $PUT_REPOSITORY_URI
-echo $AWS_REGION
-
+### Commands to Build PUT container zip file: 
+###### (to be uploaed to S3 for container build pipeline):
+```
 cd putcontainer
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $PUT_REPOSITORY_URI
-docker build -t $PUT_REPOSITORY_NAME:latest .
+docker build \
+--build-arg DT_API_URL=$DT_API_URL
+--build-arg DT_API_TOKEN=$DT_API_URL
+-t $GET_REPOSITORY_NAME:latest .
 docker tag $PUT_REPOSITORY_NAME:latest $PUT_REPOSITORY_URI:latest
 docker push $PUT_REPOSITORY_URI:latest
 cd ..
 
+```
 
 
-
-XRAY_REPOSITORY_NAME=xrayrepository855dc8d2-fy0wax3vgbhl
-XRAY_REPOSITORY_URI=696965430582.dkr.ecr.us-west-2.amazonaws.com/xrayrepository855dc8d2-fy0wax3vgbhl
-AWS_REGION=us-west-2
-
-echo $XRAY_REPOSITORY_NAME
-echo $XRAY_REPOSITORY_URI
-echo $AWS_REGION
-
+### Commands to Build GET container zip file: 
+###### (to be uploaed to S3 for container build pipeline):
+```
 cd xraycontainer
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $XRAY_REPOSITORY_URI
-docker build -t $XRAY_REPOSITORY_NAME:latest .
+docker build \
+--build-arg DT_API_URL=$DT_API_URL
+--build-arg DT_API_TOKEN=$DT_API_URL
+-t $GET_REPOSITORY_NAME:latest .
 docker tag $XRAY_REPOSITORY_NAME:latest $XRAY_REPOSITORY_URI:latest
 docker push $XRAY_REPOSITORY_URI:latest
 cd ..

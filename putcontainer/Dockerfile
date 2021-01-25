@@ -1,3 +1,14 @@
+##############################
+# REFERENCES
+##############################
+# https://stackoverflow.com/questions/19537645/get-environment-variable-value-in-dockerfile
+# https://www.dynatrace.com/support/help/technology-support/cloud-platforms/other-platforms/docker/installation-and-operation/deploy-dynatrace-oneagent-as-docker-container/
+# https://www.dynatrace.com/support/help/technology-support/cloud-platforms/amazon-web-services/integrations/deploy-oneagent-on-aws-fargate/#expand-2512build-time-injection
+
+
+##############################
+# Build base container
+##############################
 FROM amazonlinux
 # includes includes python and pip
 RUN mkdir /app
@@ -16,16 +27,23 @@ ADD ./load-test.py /app/load-test.py
 # ENTRYPOINT ["python3","/app/load-test.py"]
 
 
-
-
-
-
-
-
-ARG DT_API_URL="https://xsq45105.live.dynatrace.com/api"
-ARG DT_API_TOKEN="GDtJBRnKTjSaGM3EmsiIs"
+##############################
+# Required Input arguments, Default values
+##############################
+ARG DT_API_URL
+ARG DT_API_TOKEN
 ARG DT_ONEAGENT_OPTIONS="flavor=default&include=all"
-ENV DT_HOME="/opt/dynatrace/oneagent"
+ARG DT_HOME="/opt/dynatrace/oneagent"
+
+ENV DT_API_URL=$DT_API_URL
+ENV DT_API_TOKEN=$DT_API_TOKEN
+ENV DT_ONEAGENT_OPTIONS=$DT_ONEAGENT_OPTIONS
+ENV DT_HOME=$DT_HOME
+
+
+##############################
+# start Python app using Dynatrace
+##############################
 RUN mkdir -p "$DT_HOME" && \
     wget -O "$DT_HOME/oneagent.zip" "$DT_API_URL/v1/deployment/installer/agent/unix/paas/latest?Api-Token=$DT_API_TOKEN&$DT_ONEAGENT_OPTIONS" && \
     unzip -d "$DT_HOME" "$DT_HOME/oneagent.zip" && \
