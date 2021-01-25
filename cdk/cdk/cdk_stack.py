@@ -159,13 +159,6 @@ class CdkStack(core.Stack):
         # AMAZON ECS CLUSTER 
         ###########################################################################
         cluster = aws_ecs.Cluster(self, "LoadTestCluster", vpc=vpc)
-        # task_image = ecs.ContainerImage.from_registry("amazon/amazon-ecs-sample")
-        # ecs_patterns.QueueProcessingFargateService(self, "MyFargateService",
-        #     cluster=cluster,            # Required
-        #     cpu=512,                    # Default is 256
-        #     desired_task_count=1,            # Default is 1
-        #     image=task_image,
-        #     memory_limit_mib=2048)      # Default is 512
 
 
         ###########################################################################
