@@ -9,6 +9,7 @@
 ##############################
 # Required Input arguments, Default values
 ##############################
+FROM amazonlinux                                
 ARG DT_API_URL
 ARG DT_API_TOKEN
 ARG DT_ONEAGENT_OPTIONS='flavor=default&include=all'
@@ -23,7 +24,6 @@ ENV DT_HOME=$DT_HOME
 ##############################
 # Build base container
 ##############################
-FROM amazonlinux                                
 RUN mkdir /app
 RUN mkdir -p $DT_HOME
 COPY ./diagram.png /app/diagram.png
