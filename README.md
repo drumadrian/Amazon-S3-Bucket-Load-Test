@@ -77,7 +77,7 @@ cd putcontainer
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $PUT_REPOSITORY_URI
 docker build \
 --build-arg DT_API_URL=$DT_API_URL \
---build-arg DT_API_TOKEN=$DT_API_URL \
+--build-arg DT_API_TOKEN=$DT_API_TOKEN \
 -t $GET_REPOSITORY_NAME:latest .
 docker tag $PUT_REPOSITORY_NAME:latest $PUT_REPOSITORY_URI:latest
 docker push $PUT_REPOSITORY_URI:latest
