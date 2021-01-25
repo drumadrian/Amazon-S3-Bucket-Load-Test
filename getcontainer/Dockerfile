@@ -29,7 +29,7 @@ RUN mkdir -p $DT_HOME
 # COPY ./diagram.png /app/diagram.png
 # ADD ./load-test.sh /app/load-test.sh
 # RUN ls -al /app/load-test.sh
-RUN chmod 755 /app/load-test.sh
+# RUN chmod 755 /app/load-test.sh
 RUN yum install -y aws-cli datetime
 RUN yum install -y wget unzip
 RUN yum install -y python3-pip python3 python3-setuptools
