@@ -7,12 +7,25 @@
 
 
 ##############################
+# Required Input arguments, Default values
+##############################
+ARG DT_API_URL
+ARG DT_API_TOKEN
+ARG DT_ONEAGENT_OPTIONS='flavor=default&include=all'
+ARG DT_HOME='/opt/dynatrace/oneagent'
+
+ENV DT_API_URL=$DT_API_URL
+ENV DT_API_TOKEN=$DT_API_TOKEN
+ENV DT_ONEAGENT_OPTIONS=$DT_ONEAGENT_OPTIONS
+ENV DT_HOME=$DT_HOME
+
+
+##############################
 # Build base container
 ##############################
-FROM amazonlinux
-# includes includes python and pip
+FROM amazonlinux                                
 RUN mkdir /app
-# COPY . /src
+RUN mkdir -p $DT_HOME
 COPY ./diagram.png /app/diagram.png
 ADD ./load-test.sh /app/load-test.sh
 RUN ls -al /app/load-test.sh
@@ -27,25 +40,11 @@ ADD ./load-test.py /app/load-test.py
 # ENTRYPOINT ["python3","/app/load-test.py"]
 
 
-##############################
-# Required Input arguments, Default values
-##############################
-ARG DT_API_URL
-ARG DT_API_TOKEN
-ARG DT_ONEAGENT_OPTIONS=flavor=default&include=all
-ARG DT_HOME=/opt/dynatrace/oneagent
-
-ENV DT_API_URL=$DT_API_URL
-ENV DT_API_TOKEN=$DT_API_TOKEN
-ENV DT_ONEAGENT_OPTIONS=$DT_ONEAGENT_OPTIONS
-ENV DT_HOME=$DT_HOME
-
 
 ##############################
 # start Python app using Dynatrace
 ##############################
-RUN mkdir -p "$DT_HOME" && \
-    wget -O "$DT_HOME/oneagent.zip" "$DT_API_URL/v1/deployment/installer/agent/unix/paas/latest?Api-Token=$DT_API_TOKEN&$DT_ONEAGENT_OPTIONS" && \
+RUN wget -O "$DT_HOME/oneagent.zip" "$DT_API_URL/v1/deployment/installer/agent/unix/paas/latest?Api-Token=$DT_API_TOKEN&$DT_ONEAGENT_OPTIONS" && \
     unzip -d "$DT_HOME" "$DT_HOME/oneagent.zip" && \
     rm "$DT_HOME/oneagent.zip"
 ENTRYPOINT [ "/opt/dynatrace/oneagent/dynatrace-agent64.sh" ]

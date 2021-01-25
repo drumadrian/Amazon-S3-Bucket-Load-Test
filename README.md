@@ -43,7 +43,7 @@ export XRAY_REPOSITORY_URI=<xray-repository-uri>
 
 Optional: 
 echo $DT_API_URL
-echo $DT_API_TOKEN=
+echo $DT_API_TOKEN
 echo $AWS_REGION
 echo $GET_REPOSITORY_NAME
 echo $GET_REPOSITORY_URI
