@@ -61,8 +61,8 @@ echo $XRAY_REPOSITORY_URI
 cd getcontainer
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $GET_REPOSITORY_URI
 docker build \
---build-arg DT_API_URL=$DT_API_URL
---build-arg DT_API_TOKEN=$DT_API_URL
+--build-arg DT_API_URL=$DT_API_URL \
+--build-arg DT_API_TOKEN=$DT_API_URL \
 -t $GET_REPOSITORY_NAME:latest .
 docker tag $GET_REPOSITORY_NAME:latest $GET_REPOSITORY_URI:latest
 docker push $GET_REPOSITORY_URI:latest
@@ -92,8 +92,8 @@ cd ..
 cd xraycontainer
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $XRAY_REPOSITORY_URI
 docker build \
---build-arg DT_API_URL=$DT_API_URL
---build-arg DT_API_TOKEN=$DT_API_URL
+--build-arg DT_API_URL=$DT_API_URL \
+--build-arg DT_API_TOKEN=$DT_API_URL \
 -t $GET_REPOSITORY_NAME:latest .
 docker tag $XRAY_REPOSITORY_NAME:latest $XRAY_REPOSITORY_URI:latest
 docker push $XRAY_REPOSITORY_URI:latest

@@ -26,7 +26,7 @@ ENV DT_HOME=$DT_HOME
 ##############################
 RUN mkdir /app
 RUN mkdir -p $DT_HOME
-COPY ./diagram.png /app/diagram.png
+# COPY ./diagram.png /app/diagram.png
 ADD ./load-test.sh /app/load-test.sh
 RUN ls -al /app/load-test.sh
 RUN chmod 755 /app/load-test.sh
