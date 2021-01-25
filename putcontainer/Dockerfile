@@ -32,8 +32,8 @@ ADD ./load-test.py /app/load-test.py
 ##############################
 ARG DT_API_URL
 ARG DT_API_TOKEN
-ARG DT_ONEAGENT_OPTIONS="flavor=default&include=all"
-ARG DT_HOME="/opt/dynatrace/oneagent"
+ARG DT_ONEAGENT_OPTIONS=flavor=default&include=all
+ARG DT_HOME=/opt/dynatrace/oneagent
 
 ENV DT_API_URL=$DT_API_URL
 ENV DT_API_TOKEN=$DT_API_TOKEN
