@@ -56,7 +56,7 @@ echo $XRAY_REPOSITORY_URI
 
 
 ### Commands to Build GET container zip file: 
-###### (to be uploaed to S3 for container build pipeline):
+###### (to be uploaed to ECR for Fargate):
 ```
 cd getcontainer
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $GET_REPOSITORY_URI
@@ -71,7 +71,7 @@ cd ..
 
 
 ### Commands to Build PUT container zip file: 
-###### (to be uploaed to S3 for container build pipeline):
+###### (to be uploaed to ECR for Fargate):
 ```
 cd putcontainer
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $PUT_REPOSITORY_URI
@@ -86,8 +86,8 @@ cd ..
 ```
 
 
-### Commands to Build GET container zip file: 
-###### (to be uploaed to S3 for container build pipeline):
+### Commands to Build X-Ray container zip file: 
+###### (to be uploaed to ECR for Fargate):
 ```
 cd xraycontainer
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $XRAY_REPOSITORY_URI
