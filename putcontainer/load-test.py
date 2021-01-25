@@ -97,7 +97,7 @@ def start_uploads(bucketname, queueURL, sqs_client, sdk):
             uploaded = upload_to_bucket('/app/diagram.png', bucketname, s3_file_name)
 
         if uploaded:
-            with sdk.trace_custom_service('upload_to_bucket()', 'S3'):
+            with sdk.trace_custom_service('upload_to_bucket()', 'SQS'):
                 enqueue_object(bucketname, s3_file_name, queueURL, sqs_client)
         else:
             print("Error uploading object: {0} to bucket: {1}".format(s3_file_name, bucketname))
@@ -148,7 +148,7 @@ if __name__ == '__main__':
         sdk.add_custom_request_attribute('Method', 'get_queuename()')
         sdk.add_custom_request_attribute('Container', 'Put')
         sdk.add_custom_request_attribute('famous actor', 'Benedict Cumberbatch')
-        with sdk.trace_custom_service('get_queuename()', 'SQS'):
+        with sdk.trace_custom_service('get_queuename()', 'DNS'):
             QUEUEURL = get_queuename()
         # QUEUEURL = "https://sqs.us-west-2.amazonaws.com/696965430582/S3LoadTest-ecstaskqueuequeue6E80C2CD-14EYBYEKSI2FE"
         ################################################################################################################
