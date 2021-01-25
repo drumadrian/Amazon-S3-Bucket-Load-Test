@@ -102,12 +102,12 @@ def start_uploads(bucketname, queueURL, sqs_client, sdk):
         else:
             print("Error uploading object: {0} to bucket: {1}".format(s3_file_name, bucketname))
 
+
 ################################################################################################################
 #   Debug Dynatrace SDK errors
 ################################################################################################################
 def _diag_callback(unicode_message):
 	print(unicode_message)
-
 
 
 ################################################################################################################
@@ -135,7 +135,6 @@ if __name__ == '__main__':
         print('It may take a few moments before the path appears in the UI.')
         ################################################################################################################
 
-        # with oneagent.get_sdk().trace_incoming_remote_call('method', 'service', 'endpoint'):
 
         ################################################################################################################
         # Get and Print the list of user's environment variables 
@@ -169,9 +168,6 @@ if __name__ == '__main__':
         if shutdown_error:
             print('Error shutting down SDK:', shutdown_error)
 
-
-    # # Close the segment
-    # oneagent.shutdown()
 
 
 

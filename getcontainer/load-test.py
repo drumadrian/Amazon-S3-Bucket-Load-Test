@@ -64,72 +64,99 @@ def dequeue_message(QUEUEURL, sqs_client):
     return [bucketname, objectkey]
 
 
-def start_downloads(QUEUEURL, sqs_client, s3_client):
+################################################################################################################
+#   Download files continuously from S3
+################################################################################################################
+def start_downloads(QUEUEURL, sqs_client, s3_client, sdk):
     while True:
 
         now = datetime.now() # current date and time
         time_now = now.strftime("%H:%M:%S.%f")
         print("\n In start_downloads() Time now: " + time_now)
 
-        message = dequeue_message(QUEUEURL, sqs_client)
+        with sdk.trace_custom_service('dequeue_message()', 'SQS'):
+            message = dequeue_message(QUEUEURL, sqs_client)
         print("\n message={0}\n".format(message))
 
         bucketname = message[0]
         objectkey = message[1]
 
-        now = datetime.now() # current date and time
-        time_now = now.strftime("%H:%M:%S.%f")
-
-        if bucketname != "wait":
-            try:
-                get_object_response = s3_client.get_object(
-                    Bucket=bucketname,
-                    Key=objectkey
-                )
-            except ClientError as e:
-                print("Error downloading object: {0} from bucket: {1}".format(objectkey, bucketname))
+        with sdk.trace_custom_service('get_object()', 'S3'):
+            if bucketname != "wait":
+                try:
+                    get_object_response = s3_client.get_object(
+                        Bucket=bucketname,
+                        Key=objectkey
+                    )
+                except ClientError as e:
+                    print("Error downloading object: {0} from bucket: {1}".format(objectkey, bucketname))
 
 
+################################################################################################################
+#   Debug Dynatrace SDK errors
+################################################################################################################
+def _diag_callback(unicode_message):
+	print(unicode_message)
 
+
+################################################################################################################
+#   Main function 
+################################################################################################################
 if __name__ == '__main__':
 
-    # Get and Print the list of user's environment variables 
-    env_var = os.environ 
-    print("\n User's Environment variables:") 
-    pprint.pprint(dict(env_var), width = 1) 
-
-    QUEUEURL = get_queuename()
-    
-    sqs_client = boto3.client('sqs')
-    s3_client = boto3.client('s3')
-
-    start_downloads(QUEUEURL, sqs_client, s3_client)
-
-
-
-
-
-
-
-
-
-
+    try:
+        ################################################################################################################
+        #   Setup Dynatrace Tracing
+        ################################################################################################################
+        init_result = oneagent.initialize()
+        # if not oneagent.initialize():
+        if not init_result:
+            print('Error initializing OneAgent SDK.')
+        if init_result:
+            print('SDK should work (but agent might be inactive).')
+            print('OneAgent SDK initialization result: ' + repr(init_result))
+        else:
+            print('SDK will definitely not work (i.e. functions will be no-ops):', init_result)
+        sdk = oneagent.get_sdk()
+        if sdk.agent_state not in (AgentState.ACTIVE, AgentState.TEMPORARILY_INACTIVE):
+            print('Dynatrace SDK agent is NOT Active, you will not see data from this process.')
+        sdk.set_diagnostic_callback(_diag_callback)
+        print('It may take a few moments before the path appears in the UI.')
+        ################################################################################################################
 
 
+        ################################################################################################################
+        # Get and Print the list of user's environment variables 
+        env_var = os.environ 
+        print("\n User's Environment variables:") 
+        pprint.pprint(dict(env_var), width = 1) 
+        ################################################################################################################
 
+        ################################################################################################################
+        sdk.add_custom_request_attribute('Method', 'get_queuename()')
+        sdk.add_custom_request_attribute('Container', 'Put')
+        sdk.add_custom_request_attribute('famous actor', 'Benedict Cumberbatch')
+        with sdk.trace_custom_service('get_queuename()', 'DNS'):
+            QUEUEURL = get_queuename()
+        # QUEUEURL = "https://sqs.us-west-2.amazonaws.com/696965430582/S3LoadTest-ecstaskqueuequeue6E80C2CD-14EYBYEKSI2FE"
+        ################################################################################################################
 
+        ################################################################################################################
+        with sdk.trace_custom_service('get_bucketname()', 'DNS'):
+            BUCKETNAME = get_bucketname()
+        # BUCKETNAME = "s3loadtest-storagebucket04df299d-6wyssbwsav39"
+        ################################################################################################################
 
+        ################################################################################################################
+        sqs_client = boto3.client('sqs')
+        s3_client = boto3.client('s3')
+        start_downloads(QUEUEURL, sqs_client, s3_client, sdk)
+        ################################################################################################################
 
-
-
-
-
-
-
-
-
-
-
+    finally:
+        shutdown_error = oneagent.shutdown()
+        if shutdown_error:
+            print('Error shutting down SDK:', shutdown_error)
 
 
 
